@@ -393,26 +393,49 @@
     color: var(--ink-soft);
   }
 
-  /* Inline QR placeholder in the masthead's right column */
-  .qr-placeholder {
+  /* QR + "Settings" label in the masthead's right column */
+  .qr-stack {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+  }
+  .qr-frame {
     width: 56px;
     height: 56px;
-    border: 1.5px dashed var(--ink-soft);
+    background: #fff;
+    border: 1px solid var(--rule);
     border-radius: 4px;
+    padding: 3px;
     display: grid;
     place-items: center;
+    transition: border-color .2s;
+  }
+  .qr-frame img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    image-rendering: pixelated;
+  }
+  .qr-frame .qr-fallback {
     font-family: 'JetBrains Mono', monospace;
     font-size: 11px;
     letter-spacing: .15em;
     color: var(--ink-soft);
-    background: transparent;
-    cursor: pointer;
-    transition: border-color .2s, color .2s;
   }
-  .qr-placeholder:hover {
-    border-color: var(--ink);
-    color: var(--ink);
+  .qr-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: .25em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    transition: color .2s;
   }
+  .qr-stack:hover .qr-frame { border-color: var(--ink); }
+  .qr-stack:hover .qr-label { color: var(--ink); }
   .settings-label {
     text-align: right;
     cursor: pointer;
@@ -576,7 +599,13 @@
     </div>
     <h1>Subway <em>Departures</em></h1>
     <div class="right">
-      <div class="qr-placeholder">QR</div>
+      <a class="qr-stack" id="qr-stack" href="control.html">
+        <span class="qr-frame">
+          <img id="qr-img" alt="" />
+          <span class="qr-fallback" id="qr-fallback">QR</span>
+        </span>
+        <span class="qr-label">Settings</span>
+      </a>
     </div>
   </header>
   <div class="subline">
@@ -833,8 +862,22 @@ async function refresh() {
   if (!config.demo) setStatus('LIVE', false);
 }
 
+function getControlUrl() {
+  if (config.controlUrl) return config.controlUrl;
+  // Fallback: resolve relative to the current page so the QR works for whoever scans it.
+  return new URL('control.html', location.href).toString();
+}
 function updateQR() {
-  // Placeholder box for now — actual QR generation will be wired up later
+  const url = getControlUrl();
+  const stack = document.getElementById('qr-stack');
+  const img = document.getElementById('qr-img');
+  const fallback = document.getElementById('qr-fallback');
+  if (stack) stack.href = url;
+  if (!img) return;
+  const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=2&data=${encodeURIComponent(url)}`;
+  img.onload  = () => { if (fallback) fallback.style.display = 'none'; };
+  img.onerror = () => { img.style.display = 'none'; if (fallback) fallback.style.display = ''; };
+  img.src = qrSrc;
 }
 
 // ---------- station headers (rendered from config.stations) ----------
@@ -866,16 +909,12 @@ function loadLocalConfig() {
 loadLocalConfig();
 updateStationHeaders();
 
-// ---------- QR placeholder → opens the control page ----------
-document.querySelector('.qr-placeholder')?.addEventListener('click', () => {
-  window.location.href = config.controlUrl || 'control.html';
-});
-
 // ---------- live sync: react to settings changes from another tab/page ----------
 window.addEventListener('storage', (e) => {
   if (!['subway-stations','subway-show-clock','subway-api-url','subway-control-url'].includes(e.key)) return;
   loadLocalConfig();
   updateStationHeaders();
+  updateQR();
   refresh();
 });
 
