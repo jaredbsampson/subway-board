@@ -474,7 +474,11 @@
 
 <script>
 const apiUrlInput = document.getElementById('api-url');
-let apiUrl = localStorage.getItem('subway-api-url') || '';
+const DEFAULT_API_URL = 'https://subway-board-api.jared-b-sampson.workers.dev';
+let apiUrl = localStorage.getItem('subway-api-url') || DEFAULT_API_URL;
+if (!localStorage.getItem('subway-api-url')) {
+  localStorage.setItem('subway-api-url', apiUrl);
+}
 apiUrlInput.value = apiUrl;
 apiUrlInput.addEventListener('change', () => {
   apiUrl = apiUrlInput.value.trim().replace(/\/+$/, '');
