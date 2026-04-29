@@ -914,7 +914,9 @@ function brightnessFromSchedule(schedule, manualBrightness) {
   const inBrightWindow = brightAt < dimAt
     ? (minsNow >= brightAt && minsNow < dimAt)
     : (minsNow >= brightAt || minsNow < dimAt);  // crosses midnight
-  return inBrightWindow ? schedule.brightTo : schedule.dimTo;
+  // In the bright window, defer to the manual slider so the user can dim during the day.
+  // In the dim window, force the scheduled dim level (auto-dim at night).
+  return inBrightWindow ? manualBrightness : schedule.dimTo;
 }
 
 async function pollSettings() {
