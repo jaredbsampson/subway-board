@@ -299,6 +299,55 @@
     color: var(--ink);
     margin-top: 6px;
   }
+
+  /* form fields for stations / display sections */
+  .form-block {
+    background: var(--bg-2);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 18px;
+  }
+  .form-block + .form-block { margin-top: 14px; }
+  .form-block .group-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .25em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: 12px;
+  }
+  .form-block .group-label + .group-label {
+    margin-top: 18px;
+  }
+  .field {
+    margin-bottom: 12px;
+  }
+  .field:last-child { margin-bottom: 0; }
+  .field label {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 5px;
+  }
+  .field input {
+    width: 100%;
+    padding: 9px 11px;
+    border: 1px solid var(--rule);
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Fraunces', serif;
+    font-size: 15px;
+    border-radius: 3px;
+  }
+  .field input:focus {
+    outline: none;
+    border-color: var(--ink);
+  }
 </style>
 </head>
 <body>
@@ -360,6 +409,57 @@
     </div>
   </section>
 
+  <section>
+    <h2>Stations</h2>
+    <div class="form-block">
+      <div class="group-label">Station 1</div>
+      <div class="field">
+        <label>Stop ID</label>
+        <input id="s1-id" placeholder="120" />
+      </div>
+      <div class="field">
+        <label>Display name</label>
+        <input id="s1-name" placeholder="96th Street" />
+      </div>
+      <div class="field">
+        <label>Subtitle</label>
+        <input id="s1-sub" placeholder="Broadway" />
+      </div>
+    </div>
+    <div class="form-block">
+      <div class="group-label">Station 2</div>
+      <div class="field">
+        <label>Stop ID</label>
+        <input id="s2-id" placeholder="A14" />
+      </div>
+      <div class="field">
+        <label>Display name</label>
+        <input id="s2-name" placeholder="96th Street" />
+      </div>
+      <div class="field">
+        <label>Subtitle</label>
+        <input id="s2-sub" placeholder="Central Park West" />
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Display</h2>
+    <div class="form-block">
+      <div class="row" style="border-top:none;padding-top:0">
+        <label>Show as Clock Time</label>
+        <div class="switch" id="clock-switch"></div>
+      </div>
+      <div class="field" style="margin-top:14px;margin-bottom:0">
+        <label>Control Page URL (for QR)</label>
+        <input id="control-url" placeholder="https://jaredbsampson.github.io/subway-board/control.html" />
+      </div>
+    </div>
+    <div class="hint" style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-faint);margin-top:8px;text-align:center">
+      Stop IDs use MTA GTFS format · 120 = 96 St (1/2/3) · A14 = 96 St (B/C)
+    </div>
+  </section>
+
   <div class="api-config">
     API URL (saved on this device)
     <input id="api-url" placeholder="https://subway-board-api.jared-b-sampson.workers.dev" />
@@ -380,6 +480,66 @@ apiUrlInput.addEventListener('change', () => {
   apiUrl = apiUrlInput.value.trim().replace(/\/+$/, '');
   localStorage.setItem('subway-api-url', apiUrl);
   load();
+});
+
+// ---------- stations ----------
+const DEFAULT_STATIONS = [
+  { id: '120', name: '96th Street', sub: 'Broadway',          slot: 1 },
+  { id: 'A14', name: '96th Street', sub: 'Central Park West', slot: 2 },
+];
+function loadStations() {
+  try {
+    const s = JSON.parse(localStorage.getItem('subway-stations') || 'null');
+    return s && Array.isArray(s) && s.length === 2 ? s : DEFAULT_STATIONS;
+  } catch { return DEFAULT_STATIONS; }
+}
+function paintStations(stations) {
+  document.getElementById('s1-id').value   = stations[0].id   || '';
+  document.getElementById('s1-name').value = stations[0].name || '';
+  document.getElementById('s1-sub').value  = stations[0].sub  || '';
+  document.getElementById('s2-id').value   = stations[1].id   || '';
+  document.getElementById('s2-name').value = stations[1].name || '';
+  document.getElementById('s2-sub').value  = stations[1].sub  || '';
+}
+function saveStations() {
+  const stations = [
+    {
+      id:   document.getElementById('s1-id').value.trim(),
+      name: document.getElementById('s1-name').value.trim(),
+      sub:  document.getElementById('s1-sub').value.trim(),
+      slot: 1,
+    },
+    {
+      id:   document.getElementById('s2-id').value.trim(),
+      name: document.getElementById('s2-name').value.trim(),
+      sub:  document.getElementById('s2-sub').value.trim(),
+      slot: 2,
+    },
+  ];
+  localStorage.setItem('subway-stations', JSON.stringify(stations));
+  showSaved();
+}
+paintStations(loadStations());
+['s1-id','s1-name','s1-sub','s2-id','s2-name','s2-sub'].forEach(id => {
+  document.getElementById(id).addEventListener('change', saveStations);
+});
+
+// ---------- display: clock-time toggle + control URL ----------
+const clockSwitch = document.getElementById('clock-switch');
+const controlUrlInput = document.getElementById('control-url');
+
+clockSwitch.classList.toggle('on', localStorage.getItem('subway-show-clock') === '1');
+controlUrlInput.value = localStorage.getItem('subway-control-url') || '';
+
+clockSwitch.addEventListener('click', () => {
+  const on = !clockSwitch.classList.contains('on');
+  clockSwitch.classList.toggle('on', on);
+  localStorage.setItem('subway-show-clock', on ? '1' : '0');
+  showSaved();
+});
+controlUrlInput.addEventListener('change', () => {
+  localStorage.setItem('subway-control-url', controlUrlInput.value.trim());
+  showSaved();
 });
 
 let state = {

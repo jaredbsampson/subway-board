@@ -566,11 +566,6 @@
 
 <div id="brightness-overlay" style="position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:9999;transition:opacity .8s ease"></div>
 
-<div class="controls">
-  <button id="theme-btn" title="Toggle theme">◐</button>
-  <button id="settings-btn" title="Settings">⚙</button>
-</div>
-
 <div class="frame">
   <header class="masthead">
     <div class="left">
@@ -587,7 +582,7 @@
   <div class="subline">
     <span id="dateline">—</span>
     <span>96th Street · Upper West Side</span>
-    <span class="settings-label">SETTINGS</span>
+    <span></span>
   </div>
 
   <section class="station" id="station-1">
@@ -633,66 +628,6 @@
     <span class="footer-center" id="footer-status">A LIVING SCHEDULE · MTA REAL-TIME</span>
     <span><span class="style-prefix">Style:</span> <span class="display-style">Broadsheet</span></span>
   </footer>
-</div>
-
-<!-- Settings sheet -->
-<div class="sheet-bg" id="sheet-bg"></div>
-<div class="sheet" id="sheet">
-  <h2>Settings</h2>
-  <div class="hint">Tailor the board</div>
-
-  <div class="field">
-    <label>Station 1 — Stop ID</label>
-    <input id="s1-id" value="120" />
-  </div>
-  <div class="field">
-    <label>Station 1 — Display name</label>
-    <input id="s1-name" value="96th Street" />
-  </div>
-  <div class="field">
-    <label>Station 1 — Subtitle</label>
-    <input id="s1-sub" value="Broadway" />
-  </div>
-
-  <div class="field" style="margin-top:24px">
-    <label>Station 2 — Stop ID</label>
-    <input id="s2-id" value="A14" />
-  </div>
-  <div class="field">
-    <label>Station 2 — Display name</label>
-    <input id="s2-name" value="96th Street" />
-  </div>
-  <div class="field">
-    <label>Station 2 — Subtitle</label>
-    <input id="s2-sub" value="Central Park West" />
-  </div>
-
-  <div class="field" style="margin-top:24px">
-    <label>API URL (your Cloudflare Worker)</label>
-    <input id="api-url" placeholder="https://subway-board-api.yourname.workers.dev" />
-  </div>
-  <div class="field">
-    <label>Control Page URL (for QR code)</label>
-    <input id="control-url" placeholder="https://yourname.github.io/subway-board/control.html" />
-  </div>
-
-  <div class="toggle-row">
-    <span>Midnight Theme</span>
-    <div class="switch" id="theme-switch"></div>
-  </div>
-  <div class="toggle-row">
-    <span>Show as Clock Time</span>
-    <div class="switch" id="clock-switch"></div>
-  </div>
-  <div class="toggle-row">
-    <span>Demo Data (no API)</span>
-    <div class="switch" id="demo-switch"></div>
-  </div>
-
-  <button class="save-btn" id="save-btn">Save & Refresh</button>
-  <div class="hint" style="margin-top:14px;text-align:center">
-    Stop IDs use MTA GTFS format. 120 = 96 St (1/2/3). A14 = 96 St (B/C).
-  </div>
 </div>
 
 <script>
@@ -902,75 +837,47 @@ function updateQR() {
   // Placeholder box for now — actual QR generation will be wired up later
 }
 
-// ---------- settings sheet wiring ----------
-const sheet = document.getElementById('sheet');
-const bg = document.getElementById('sheet-bg');
-function openSheet() {
-  document.getElementById('s1-id').value   = config.stations[0].id;
-  document.getElementById('s1-name').value = config.stations[0].name;
-  document.getElementById('s1-sub').value  = config.stations[0].sub;
-  document.getElementById('s2-id').value   = config.stations[1].id;
-  document.getElementById('s2-name').value = config.stations[1].name;
-  document.getElementById('s2-sub').value  = config.stations[1].sub;
-  document.getElementById('api-url').value = config.apiUrl;
-  document.getElementById('control-url').value = config.controlUrl;
-  setSwitch('theme-switch', document.documentElement.dataset.theme === 'midnight');
-  setSwitch('clock-switch', config.showClock);
-  setSwitch('demo-switch',  config.demo);
-  sheet.classList.add('open'); bg.classList.add('open');
+// ---------- station headers (rendered from config.stations) ----------
+function updateStationHeaders() {
+  ['station-1','station-2'].forEach((sid, i) => {
+    const s = config.stations[i];
+    if (!s) return;
+    const el = document.querySelector(`#${sid} .station-name`);
+    if (el) {
+      el.innerHTML = `${s.name} &nbsp;·&nbsp; <em style="font-style:italic;font-weight:300;color:var(--ink-soft)">${s.sub}</em>`;
+    }
+  });
 }
-function closeSheet() { sheet.classList.remove('open'); bg.classList.remove('open'); }
-function setSwitch(id, on) { document.getElementById(id).classList.toggle('on', !!on); }
 
-document.getElementById('settings-btn').addEventListener('click', openSheet);
-bg.addEventListener('click', closeSheet);
+// ---------- pull saved settings from localStorage ----------
+function loadLocalConfig() {
+  try {
+    const stations = JSON.parse(localStorage.getItem('subway-stations') || 'null');
+    if (stations && Array.isArray(stations) && stations.length === 2) {
+      config.stations = stations;
+    }
+  } catch {}
+  config.showClock = localStorage.getItem('subway-show-clock') === '1';
+  const savedApi = localStorage.getItem('subway-api-url');
+  if (savedApi) config.apiUrl = savedApi;
+  config.controlUrl = localStorage.getItem('subway-control-url') || '';
+}
 
-['theme-switch','clock-switch','demo-switch'].forEach(id => {
-  document.getElementById(id).addEventListener('click', () =>
-    document.getElementById(id).classList.toggle('on'));
+loadLocalConfig();
+updateStationHeaders();
+
+// ---------- QR placeholder → opens the control page ----------
+document.querySelector('.qr-placeholder')?.addEventListener('click', () => {
+  window.location.href = config.controlUrl || 'control.html';
 });
 
-document.getElementById('theme-btn').addEventListener('click', () => {
-  const root = document.documentElement;
-  root.dataset.theme = root.dataset.theme === 'midnight' ? '' : 'midnight';
-});
-
-document.getElementById('save-btn').addEventListener('click', () => {
-  config.stations[0] = {
-    id: document.getElementById('s1-id').value.trim(),
-    name: document.getElementById('s1-name').value.trim(),
-    sub: document.getElementById('s1-sub').value.trim(),
-    slot: 1
-  };
-  config.stations[1] = {
-    id: document.getElementById('s2-id').value.trim(),
-    name: document.getElementById('s2-name').value.trim(),
-    sub: document.getElementById('s2-sub').value.trim(),
-    slot: 2
-  };
-  // update headers
-  document.querySelector('#station-1 .station-name').innerHTML =
-    `${config.stations[0].name} &nbsp;·&nbsp; <em style="font-style:italic;font-weight:300;color:var(--ink-soft)">${config.stations[0].sub}</em>`;
-  document.querySelector('#station-2 .station-name').innerHTML =
-    `${config.stations[1].name} &nbsp;·&nbsp; <em style="font-style:italic;font-weight:300;color:var(--ink-soft)">${config.stations[1].sub}</em>`;
-
-  config.showClock = document.getElementById('clock-switch').classList.contains('on');
-  config.demo      = document.getElementById('demo-switch').classList.contains('on');
-  config.apiUrl    = document.getElementById('api-url').value.trim();
-  config.controlUrl = document.getElementById('control-url').value.trim();
-  localStorage.setItem('subway-api-url', config.apiUrl);
-  localStorage.setItem('subway-control-url', config.controlUrl);
-  updateQR();
-  document.documentElement.dataset.theme =
-    document.getElementById('theme-switch').classList.contains('on') ? 'midnight' : '';
-  closeSheet();
+// ---------- live sync: react to settings changes from another tab/page ----------
+window.addEventListener('storage', (e) => {
+  if (!['subway-stations','subway-show-clock','subway-api-url','subway-control-url'].includes(e.key)) return;
+  loadLocalConfig();
+  updateStationHeaders();
   refresh();
 });
-
-// ---------- settings entry points ----------
-// Clicking the QR placeholder or the "SETTINGS" label opens the settings sheet.
-document.querySelector('.qr-placeholder')?.addEventListener('click', openSheet);
-document.querySelector('.settings-label')?.addEventListener('click', openSheet);
 
 // ---------- boot ----------
 tickClock();
