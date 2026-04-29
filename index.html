@@ -393,49 +393,39 @@
     color: var(--ink-soft);
   }
 
-  /* QR + "Settings" label in the masthead's right column */
-  .qr-stack {
-    display: inline-flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    text-decoration: none;
-    color: inherit;
-    cursor: pointer;
-  }
-  .qr-frame {
+  /* QR code in the masthead's right column — no frame, blends with the paper */
+  .qr-link {
     width: 56px;
     height: 56px;
-    background: #fff;
-    border: 1px solid var(--rule);
-    border-radius: 4px;
-    padding: 3px;
     display: grid;
     place-items: center;
-    transition: border-color .2s;
+    text-decoration: none;
+    color: inherit;
+    opacity: .85;
+    transition: opacity .2s;
   }
-  .qr-frame img {
+  .qr-link:hover { opacity: 1; }
+  .qr-link img {
     width: 100%;
     height: 100%;
     display: block;
     image-rendering: pixelated;
   }
-  .qr-frame .qr-fallback {
+  .qr-fallback {
     font-family: 'JetBrains Mono', monospace;
     font-size: 11px;
     letter-spacing: .15em;
     color: var(--ink-soft);
   }
-  .qr-label {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 9px;
-    letter-spacing: .25em;
-    text-transform: uppercase;
-    color: var(--ink-soft);
+  /* "Settings" link in the subline, mirroring the dateline on the left */
+  .settings-link {
+    text-align: right;
+    text-decoration: none;
+    color: var(--ink-faint);
     transition: color .2s;
+    cursor: pointer;
   }
-  .qr-stack:hover .qr-frame { border-color: var(--ink); }
-  .qr-stack:hover .qr-label { color: var(--ink); }
+  .settings-link:hover { color: var(--ink); }
   .settings-label {
     text-align: right;
     cursor: pointer;
@@ -599,19 +589,16 @@
     </div>
     <h1>Subway <em>Departures</em></h1>
     <div class="right">
-      <a class="qr-stack" id="qr-stack" href="control.html">
-        <span class="qr-frame">
-          <img id="qr-img" alt="" />
-          <span class="qr-fallback" id="qr-fallback">QR</span>
-        </span>
-        <span class="qr-label">Settings</span>
+      <a class="qr-link" id="qr-link" href="control.html" aria-label="Open settings">
+        <img id="qr-img" alt="" />
+        <span class="qr-fallback" id="qr-fallback">QR</span>
       </a>
     </div>
   </header>
   <div class="subline">
     <span id="dateline">—</span>
     <span>96th Street · Upper West Side</span>
-    <span></span>
+    <a class="settings-link" id="settings-link" href="control.html">Settings</a>
   </div>
 
   <section class="station" id="station-1">
@@ -867,14 +854,24 @@ function getControlUrl() {
   // Fallback: resolve relative to the current page so the QR works for whoever scans it.
   return new URL('control.html', location.href).toString();
 }
+// Theme-matching colors so the QR's background blends with the page (no white square).
+function qrThemeColors() {
+  const dark = document.documentElement.dataset.theme === 'midnight';
+  return dark
+    ? { bg: '0d1117', fg: 'e9d9b1' }   // midnight paper / cream ink
+    : { bg: 'f1ead8', fg: '11212f' };  // paper / ink
+}
 function updateQR() {
   const url = getControlUrl();
-  const stack = document.getElementById('qr-stack');
+  const link = document.getElementById('qr-link');
+  const settingsLink = document.getElementById('settings-link');
   const img = document.getElementById('qr-img');
   const fallback = document.getElementById('qr-fallback');
-  if (stack) stack.href = url;
+  if (link) link.href = url;
+  if (settingsLink) settingsLink.href = url;
   if (!img) return;
-  const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=2&data=${encodeURIComponent(url)}`;
+  const { bg, fg } = qrThemeColors();
+  const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=0&color=${fg}&bgcolor=${bg}&data=${encodeURIComponent(url)}`;
   img.onload  = () => { if (fallback) fallback.style.display = 'none'; };
   img.onerror = () => { img.style.display = 'none'; if (fallback) fallback.style.display = ''; };
   img.src = qrSrc;
@@ -934,7 +931,10 @@ function applyBrightness(pct) {
 }
 
 function applyTheme(theme) {
-  document.documentElement.dataset.theme = (theme === 'midnight') ? 'midnight' : '';
+  const next = (theme === 'midnight') ? 'midnight' : '';
+  if (document.documentElement.dataset.theme === next) return;
+  document.documentElement.dataset.theme = next;
+  updateQR();  // re-generate QR with theme-matching colors
 }
 
 // Compute the current "intended" brightness given the schedule.
