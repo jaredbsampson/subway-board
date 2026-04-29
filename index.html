@@ -826,6 +826,20 @@ function setStatus(t, warn) {
   f.textContent = warn ? 'CONNECTION OFFLINE · SHOWING DEMO DATA' : 'A LIVING SCHEDULE · MTA REAL-TIME';
   f.classList.toggle('warn', !!warn);
 }
+let lastRefreshAt = null;
+function updateAgoText() {
+  const el = document.getElementById('updated');
+  if (!el) return;
+  if (!lastRefreshAt) { el.textContent = 'UPDATED —'; return; }
+  const secs = Math.max(0, Math.floor((Date.now() - lastRefreshAt) / 1000));
+  let ago;
+  if (secs < 5) ago = 'JUST NOW';
+  else if (secs < 60) ago = `${secs}S AGO`;
+  else if (secs < 3600) ago = `${Math.floor(secs / 60)}M AGO`;
+  else ago = `${Math.floor(secs / 3600)}H AGO`;
+  el.textContent = `UPDATED ${ago}`;
+}
+
 function tickClock() {
   const d = new Date();
   const h = d.getHours();
@@ -838,14 +852,14 @@ function tickClock() {
   const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
   document.getElementById('dateline').textContent =
     `${days[d.getDay()]} ${months[d.getMonth()]} ${d.getDate()}`;
+  updateAgoText();
 }
 
 async function refresh() {
   const all = await fetchAllArrivals();
   config.stations.forEach(st => renderArrivals(st.slot, all[st.id] || []));
-  const t = new Date();
-  document.getElementById('updated').textContent =
-    `UPDATED ${t.getHours().toString().padStart(2,'0')}:${t.getMinutes().toString().padStart(2,'0')}:${t.getSeconds().toString().padStart(2,'0')}`;
+  lastRefreshAt = Date.now();
+  updateAgoText();
   if (!config.demo) setStatus('LIVE', false);
 }
 
