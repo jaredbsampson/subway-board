@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>UPTOWN — A Departures Board</title>
+<title>Subway Departures</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,700;1,9..144,500&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
@@ -64,7 +64,7 @@
 
   .frame {
     position: relative; z-index: 1;
-    max-width: 880px;
+    max-width: 920px;
     margin: 0 auto;
     padding: 56px 40px 80px;
   }
@@ -87,10 +87,27 @@
     text-transform: uppercase;
     color: var(--ink-soft);
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     gap: 8px;
   }
   .masthead .right { justify-content: flex-end; }
+  .left-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+  .live-line {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .updated-line {
+    font-size: 9px;
+    letter-spacing: .2em;
+    color: var(--ink-faint);
+    margin-top: 4px;
+  }
   .masthead h1 {
     font-family: 'Fraunces', serif;
     font-weight: 700;
@@ -173,13 +190,51 @@
   }
   .station-rule.thin { background: var(--rule); }
 
+  /* ---------- DIRECTION COLUMNS ---------- */
+  .directions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    border-top: 1px solid var(--ink);
+  }
+  .direction {
+    min-width: 0;
+  }
+  .direction + .direction {
+    border-left: 1px solid var(--rule);
+  }
+  .direction-header {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .25em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    padding: 10px 12px 8px;
+    border-bottom: 1px solid var(--rule);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .direction-header .arrow {
+    font-size: 14px;
+    color: var(--ink-faint);
+  }
+  /* On narrow viewports (phones), stack the two columns */
+  @media (max-width: 480px) {
+    .directions { grid-template-columns: 1fr; }
+    .direction + .direction {
+      border-left: none;
+      border-top: 1px solid var(--rule);
+    }
+  }
+
   /* ---------- ARRIVAL ROWS ---------- */
   .row {
     display: grid;
-    grid-template-columns: 56px 1fr auto;
+    grid-template-columns: 40px 1fr auto;
     align-items: center;
-    gap: 18px;
-    padding: 16px 4px;
+    gap: 12px;
+    padding: 14px 12px;
     border-bottom: 1px solid var(--rule);
     transition: background .2s ease;
   }
@@ -189,17 +244,40 @@
   .row.boarding .bullet { box-shadow: 0 0 0 3px rgba(176,58,46,.18); }
 
   .bullet {
-    width: 44px; height: 44px;
+    width: 36px; height: 36px;
     border-radius: 50%;
     display: grid; place-items: center;
     color: #fff;
     font-family: 'Fraunces', serif;
     font-weight: 700;
-    font-size: 22px;
+    font-size: 18px;
     font-style: normal;
     letter-spacing: -.02em;
     flex-shrink: 0;
     box-shadow: inset 0 -2px 0 rgba(0,0,0,.18);
+    position: relative;
+  }
+  /* Express marker: small "X" tucked into the lower-right corner.
+     Sized small + outside the bullet so it doesn't overlap the route letter. */
+  .bullet.express::after {
+    content: "x";
+    position: absolute;
+    right: -2px;
+    bottom: -2px;
+    width: 12px;
+    height: 12px;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 8px;
+    line-height: 12px;
+    text-align: center;
+    border-radius: 50%;
+    border: 1.5px solid var(--paper);
+    box-sizing: content-box;
+    letter-spacing: 0;
+    text-transform: uppercase;
   }
   /* MTA route colors */
   .b-1, .b-2, .b-3        { background: #ee352e; }
@@ -222,35 +300,41 @@
   .borough {
     font-family: 'Fraunces', serif;
     font-weight: 500;
-    font-size: clamp(20px, 3.2vw, 26px);
+    font-size: clamp(15px, 2.2vw, 19px);
     letter-spacing: -.01em;
-    line-height: 1.1;
+    line-height: 1.15;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .terminus {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    letter-spacing: .12em;
+    font-size: 9px;
+    letter-spacing: .1em;
     text-transform: uppercase;
     color: var(--ink-faint);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .mins {
     font-family: 'JetBrains Mono', monospace;
     font-weight: 500;
-    font-size: clamp(28px, 5vw, 38px);
+    font-size: clamp(22px, 3.4vw, 28px);
     letter-spacing: -.02em;
     text-align: right;
     line-height: 1;
     color: var(--ink);
     font-variant-numeric: tabular-nums;
-    min-width: 90px;
+    min-width: 60px;
   }
   .mins .unit {
     display: block;
-    font-size: 9px;
-    letter-spacing: .25em;
+    font-size: 8px;
+    letter-spacing: .2em;
     color: var(--ink-faint);
-    margin-top: 6px;
+    margin-top: 4px;
     text-transform: uppercase;
     font-weight: 400;
   }
@@ -275,37 +359,71 @@
     margin-top: 40px;
     padding-top: 20px;
     border-top: 2px solid var(--ink);
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
     align-items: center;
+    gap: 16px;
     font-family: 'JetBrains Mono', monospace;
     font-size: 10px;
     letter-spacing: .2em;
     text-transform: uppercase;
     color: var(--ink-faint);
   }
+  .footer-time {
+    line-height: 1.5;
+    color: var(--ink-soft);
+  }
+  .footer-time .live {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--ink);
+  }
+  .footer-center { text-align: center; }
+  .style-prefix {
+    /* inherits the footer's mono caps treatment */
+    color: var(--ink-faint);
+  }
+  .display-style {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 13px;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--ink-soft);
+  }
+
+  /* Inline QR placeholder in the masthead's right column */
+  .qr-placeholder {
+    width: 56px;
+    height: 56px;
+    border: 1.5px dashed var(--ink-soft);
+    border-radius: 4px;
+    display: grid;
+    place-items: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: .15em;
+    color: var(--ink-soft);
+    background: transparent;
+    cursor: pointer;
+    transition: border-color .2s, color .2s;
+  }
+  .qr-placeholder:hover {
+    border-color: var(--ink);
+    color: var(--ink);
+  }
+  .settings-label {
+    text-align: right;
+    cursor: pointer;
+    transition: color .2s;
+  }
+  .settings-label:hover {
+    color: var(--ink);
+  }
 
   .controls {
-    position: fixed;
-    top: 16px; right: 16px;
-    display: flex; gap: 6px;
-    z-index: 10;
-  }
-  .controls button {
-    width: 36px; height: 36px;
-    border: 1px solid var(--rule);
-    background: var(--paper-2);
-    color: var(--ink);
-    border-radius: 50%;
-    cursor: pointer;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 14px;
-    display: grid; place-items: center;
-    transition: all .2s;
-  }
-  .controls button:hover {
-    border-color: var(--ink);
-    transform: translateY(-1px);
+    display: none;
   }
 
   /* ---------- SETTINGS SHEET ---------- */
@@ -446,6 +564,8 @@
 </head>
 <body>
 
+<div id="brightness-overlay" style="position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:9999;transition:opacity .8s ease"></div>
+
 <div class="controls">
   <button id="theme-btn" title="Toggle theme">◐</button>
   <button id="settings-btn" title="Settings">⚙</button>
@@ -453,14 +573,21 @@
 
 <div class="frame">
   <header class="masthead">
-    <div class="left"><span class="pulse"></span><span id="status">LIVE</span></div>
-    <h1>Uptown <em>Departures</em></h1>
-    <div class="right"><span id="clock">—:—</span></div>
+    <div class="left">
+      <div class="left-stack">
+        <span class="live-line"><span class="pulse"></span><span id="status">LIVE</span></span>
+        <span id="updated" class="updated-line">UPDATED —</span>
+      </div>
+    </div>
+    <h1>Subway <em>Departures</em></h1>
+    <div class="right">
+      <div class="qr-placeholder">QR</div>
+    </div>
   </header>
   <div class="subline">
     <span id="dateline">—</span>
     <span>96th Street · Upper West Side</span>
-    <span id="updated">UPDATED —</span>
+    <span class="settings-label">SETTINGS</span>
   </div>
 
   <section class="station" id="station-1">
@@ -470,7 +597,16 @@
     </div>
     <div class="station-rule"></div>
     <div class="station-rule thin" style="margin-bottom:8px"></div>
-    <div id="arrivals-1"><div class="empty">Loading arrivals…</div></div>
+    <div class="directions">
+      <div class="direction">
+        <div class="direction-header"><span>Uptown</span><span class="arrow">↑</span></div>
+        <div id="arrivals-1-N"><div class="empty">Loading…</div></div>
+      </div>
+      <div class="direction">
+        <div class="direction-header"><span>Downtown</span><span class="arrow">↓</span></div>
+        <div id="arrivals-1-S"><div class="empty">Loading…</div></div>
+      </div>
+    </div>
   </section>
 
   <section class="station" id="station-2">
@@ -480,13 +616,22 @@
     </div>
     <div class="station-rule"></div>
     <div class="station-rule thin" style="margin-bottom:8px"></div>
-    <div id="arrivals-2"><div class="empty">Loading arrivals…</div></div>
+    <div class="directions">
+      <div class="direction">
+        <div class="direction-header"><span>Uptown</span><span class="arrow">↑</span></div>
+        <div id="arrivals-2-N"><div class="empty">Loading…</div></div>
+      </div>
+      <div class="direction">
+        <div class="direction-header"><span>Downtown</span><span class="arrow">↓</span></div>
+        <div id="arrivals-2-S"><div class="empty">Loading…</div></div>
+      </div>
+    </div>
   </section>
 
   <footer class="footer">
-    <span>NO. 1 &nbsp;·&nbsp; VOL. I</span>
-    <span class="status-bar" id="footer-status">A LIVING SCHEDULE · MTA REAL-TIME</span>
-    <span>UWS</span>
+    <span id="clock">—:—</span>
+    <span class="footer-center" id="footer-status">A LIVING SCHEDULE · MTA REAL-TIME</span>
+    <span><span class="style-prefix">Style:</span> <span class="display-style">Broadsheet</span></span>
   </footer>
 </div>
 
@@ -522,6 +667,15 @@
     <input id="s2-sub" value="Central Park West" />
   </div>
 
+  <div class="field" style="margin-top:24px">
+    <label>API URL (your Cloudflare Worker)</label>
+    <input id="api-url" placeholder="https://subway-board-api.yourname.workers.dev" />
+  </div>
+  <div class="field">
+    <label>Control Page URL (for QR code)</label>
+    <input id="control-url" placeholder="https://yourname.github.io/subway-board/control.html" />
+  </div>
+
   <div class="toggle-row">
     <span>Midnight Theme</span>
     <div class="switch" id="theme-switch"></div>
@@ -550,11 +704,12 @@
 ---------------------------------------------------------------- */
 
 const config = {
-  apiBase: localStorage.getItem('subway-api-url') || 'https://subway-board-api.jared-b-sampson.workers.dev',
   stations: [
     { id: '120', name: '96th Street', sub: 'Broadway',          slot: 1 },
     { id: 'A14', name: '96th Street', sub: 'Central Park West', slot: 2 },
   ],
+  apiUrl: localStorage.getItem('subway-api-url') || 'https://subway-board-api.jared-b-sampson.workers.dev',
+  controlUrl: localStorage.getItem('subway-control-url') || '',
   showClock: false,
   demo: false,
 };
@@ -596,39 +751,62 @@ function demoData(stopId) {
   if (stopId === '120') return [
     { route_id: '1', stop_id: '120N', estimated_current_stop_arrival_time: m(2) },
     { route_id: '2', stop_id: '120N', estimated_current_stop_arrival_time: m(5) },
-    { route_id: '1', stop_id: '120S', estimated_current_stop_arrival_time: m(7) },
     { route_id: '3', stop_id: '120N', estimated_current_stop_arrival_time: m(11) },
-    { route_id: '2', stop_id: '120S', estimated_current_stop_arrival_time: m(14) },
+    { route_id: '1', stop_id: '120N', estimated_current_stop_arrival_time: m(16) },
+    { route_id: '1', stop_id: '120S', estimated_current_stop_arrival_time: m(3) },
+    { route_id: '2', stop_id: '120S', estimated_current_stop_arrival_time: m(7) },
+    { route_id: '3', stop_id: '120S', estimated_current_stop_arrival_time: m(12) },
+    { route_id: '1', stop_id: '120S', estimated_current_stop_arrival_time: m(18) },
   ];
   if (stopId === 'A14') return [
     { route_id: 'C', stop_id: 'A14N', estimated_current_stop_arrival_time: m(3) },
     { route_id: 'B', stop_id: 'A14N', estimated_current_stop_arrival_time: m(6) },
-    { route_id: 'C', stop_id: 'A14S', estimated_current_stop_arrival_time: m(9) },
-    { route_id: 'B', stop_id: 'A14S', estimated_current_stop_arrival_time: m(13) },
+    { route_id: 'C', stop_id: 'A14N', estimated_current_stop_arrival_time: m(13) },
+    { route_id: 'B', stop_id: 'A14N', estimated_current_stop_arrival_time: m(19) },
+    { route_id: 'C', stop_id: 'A14S', estimated_current_stop_arrival_time: m(4) },
+    { route_id: 'B', stop_id: 'A14S', estimated_current_stop_arrival_time: m(9) },
+    { route_id: 'C', stop_id: 'A14S', estimated_current_stop_arrival_time: m(15) },
+    { route_id: 'B', stop_id: 'A14S', estimated_current_stop_arrival_time: m(21) },
   ];
   return [];
 }
 
 // ---------- fetch ----------
-async function fetchStation(stopId) {
-  if (config.demo) return demoData(stopId);
-  if (!config.apiBase) {
-    setStatus('OFFLINE — DEMO', true);
-    return demoData(stopId);
+async function fetchAllArrivals() {
+  if (config.demo) {
+    const r = {};
+    config.stations.forEach(s => r[s.id] = demoData(s.id).map(x => ({
+      route: x.route_id,
+      direction: x.stop_id.endsWith('N') ? 'N' : 'S',
+      stop_id: x.stop_id,
+      destination: (TERMINUS[x.stop_id] || destFor(x.route_id, x.stop_id).name),
+      arrival: Math.floor(x.estimated_current_stop_arrival_time / 1000),
+    })));
+    return r;
+  }
+  if (!config.apiUrl) {
+    setStatus('NO API · DEMO', true);
+    config.demo = true;
+    return fetchAllArrivals();
   }
   try {
-    const r = await fetch(`${config.apiBase}/?stops=${encodeURIComponent(stopId)}`, { cache: 'no-store' });
+    const ids = config.stations.map(s => s.id).join(',');
+    const url = config.apiUrl.replace(/\/+$/, '') + '/?stops=' + encodeURIComponent(ids);
+    const r = await fetch(url, { cache: 'no-store' });
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const data = await r.json();
-    const list = data.stops?.[stopId] || [];
-    return list.map(a => ({
-      route_id: a.route,
-      stop_id: a.stop_id,
-      estimated_current_stop_arrival_time: a.arrival * 1000,
-    }));
+    return data.stops || {};
   } catch (e) {
-    setStatus('OFFLINE — DEMO', true);
-    return demoData(stopId);
+    setStatus('OFFLINE · DEMO', true);
+    const r = {};
+    config.stations.forEach(s => r[s.id] = demoData(s.id).map(x => ({
+      route: x.route_id,
+      direction: x.stop_id.endsWith('N') ? 'N' : 'S',
+      stop_id: x.stop_id,
+      destination: (TERMINUS[x.stop_id] || destFor(x.route_id, x.stop_id).name),
+      arrival: Math.floor(x.estimated_current_stop_arrival_time / 1000),
+    })));
+    return r;
   }
 }
 
@@ -648,34 +826,45 @@ function fmtClock(ts) {
   return `<span class="mins">${hh}:${m.toString().padStart(2,'0')}<span class="unit">${ampm}</span></span>`;
 }
 
-function renderArrivals(slot, arrivals) {
-  const target = document.getElementById('arrivals-' + slot);
-  if (!arrivals.length) {
-    target.innerHTML = '<div class="empty">No upcoming trains.</div>';
-    return;
-  }
-  arrivals.sort((a,b) => a.estimated_current_stop_arrival_time - b.estimated_current_stop_arrival_time);
-  const top = arrivals.slice(0, 6);
-  target.innerHTML = top.map(a => {
-    const dest = a.destination_stop && TERMINUS[a.destination_stop]
-      ? TERMINUS[a.destination_stop]
-      : destFor(a.route_id, a.stop_id);
-    const minsTxt = (a.estimated_current_stop_arrival_time - Date.now()) / 60000;
-    const boarding = minsTxt < 1 ? ' boarding' : '';
-    const minsHtml = config.showClock
-      ? fmtClock(a.estimated_current_stop_arrival_time)
-      : fmtMins(a.estimated_current_stop_arrival_time).html;
-    return `
-      <div class="row${boarding}">
-        <div class="bullet b-${a.route_id}">${a.route_id}</div>
-        <div class="destination">
-          <div class="borough">${dest.borough}</div>
-          <div class="terminus">${dest.name}</div>
-        </div>
-        ${minsHtml}
+// Routes that run express (NYC subway). The 1 is local; 2 and 3 are express.
+// 4/5 are express, 6 is local. A and D are express on 8th Av/Concourse.
+// Note: the B is express on Central Park West below 145 St, but at 96 St CPW it
+// stops as a local — so we exclude it here for this user's stations.
+const EXPRESS = new Set(['2','3','4','5','A','D','N']);
+
+function renderRow(a) {
+  const arrMs = a.arrival * 1000;
+  const minsTxt = (arrMs - Date.now()) / 60000;
+  const boarding = minsTxt < 1 ? ' boarding' : '';
+  const minsHtml = config.showClock ? fmtClock(arrMs) : fmtMins(arrMs).html;
+  const expressClass = EXPRESS.has(a.route) ? ' express' : '';
+  return `
+    <div class="row${boarding}">
+      <div class="bullet b-${a.route}${expressClass}">${a.route}</div>
+      <div class="destination">
+        <div class="borough">${a.destination || '—'}</div>
+        <div class="terminus">${a.route} train</div>
       </div>
-    `;
-  }).join('');
+      ${minsHtml}
+    </div>
+  `;
+}
+
+function renderArrivals(slot, arrivals) {
+  const targetN = document.getElementById('arrivals-' + slot + '-N');
+  const targetS = document.getElementById('arrivals-' + slot + '-S');
+  if (!arrivals) arrivals = [];
+  arrivals.sort((a,b) => a.arrival - b.arrival);
+
+  const northbound = arrivals.filter(a => a.direction === 'N').slice(0, 4);
+  const southbound = arrivals.filter(a => a.direction === 'S').slice(0, 4);
+
+  targetN.innerHTML = northbound.length
+    ? northbound.map(renderRow).join('')
+    : '<div class="empty">No upcoming trains.</div>';
+  targetS.innerHTML = southbound.length
+    ? southbound.map(renderRow).join('')
+    : '<div class="empty">No upcoming trains.</div>';
 }
 
 // ---------- chrome ----------
@@ -701,15 +890,16 @@ function tickClock() {
 }
 
 async function refresh() {
-  const tasks = config.stations.map(async (st) => {
-    const arrivals = await fetchStation(st.id);
-    renderArrivals(st.slot, arrivals);
-  });
-  await Promise.all(tasks);
+  const all = await fetchAllArrivals();
+  config.stations.forEach(st => renderArrivals(st.slot, all[st.id] || []));
   const t = new Date();
   document.getElementById('updated').textContent =
     `UPDATED ${t.getHours().toString().padStart(2,'0')}:${t.getMinutes().toString().padStart(2,'0')}:${t.getSeconds().toString().padStart(2,'0')}`;
-  setStatus(config.demo ? 'DEMO' : 'LIVE', config.demo);
+  if (!config.demo) setStatus('LIVE', false);
+}
+
+function updateQR() {
+  // Placeholder box for now — actual QR generation will be wired up later
 }
 
 // ---------- settings sheet wiring ----------
@@ -722,6 +912,8 @@ function openSheet() {
   document.getElementById('s2-id').value   = config.stations[1].id;
   document.getElementById('s2-name').value = config.stations[1].name;
   document.getElementById('s2-sub').value  = config.stations[1].sub;
+  document.getElementById('api-url').value = config.apiUrl;
+  document.getElementById('control-url').value = config.controlUrl;
   setSwitch('theme-switch', document.documentElement.dataset.theme === 'midnight');
   setSwitch('clock-switch', config.showClock);
   setSwitch('demo-switch',  config.demo);
@@ -764,17 +956,77 @@ document.getElementById('save-btn').addEventListener('click', () => {
 
   config.showClock = document.getElementById('clock-switch').classList.contains('on');
   config.demo      = document.getElementById('demo-switch').classList.contains('on');
+  config.apiUrl    = document.getElementById('api-url').value.trim();
+  config.controlUrl = document.getElementById('control-url').value.trim();
+  localStorage.setItem('subway-api-url', config.apiUrl);
+  localStorage.setItem('subway-control-url', config.controlUrl);
+  updateQR();
   document.documentElement.dataset.theme =
     document.getElementById('theme-switch').classList.contains('on') ? 'midnight' : '';
   closeSheet();
   refresh();
 });
 
+// ---------- settings entry points ----------
+// Clicking the QR placeholder or the "SETTINGS" label opens the settings sheet.
+document.querySelector('.qr-placeholder')?.addEventListener('click', openSheet);
+document.querySelector('.settings-label')?.addEventListener('click', openSheet);
+
 // ---------- boot ----------
 tickClock();
 setInterval(tickClock, 1000);
+updateQR();
 refresh();
 setInterval(refresh, 30000);  // every 30s, like the real countdown clocks
+// ---------- remote settings polling (brightness / theme / schedule) ----------
+const overlay = document.getElementById('brightness-overlay');
+
+function applyBrightness(pct) {
+  // pct 100 = no overlay, pct 10 = 90% black overlay
+  const dim = Math.max(0, Math.min(0.9, (100 - pct) / 100));
+  overlay.style.opacity = dim;
+}
+
+function applyTheme(theme) {
+  document.documentElement.dataset.theme = (theme === 'midnight') ? 'midnight' : '';
+}
+
+// Compute the current "intended" brightness given the schedule.
+// Schedule is a simple two-point step: bright between brightAt and dimAt, dim otherwise.
+function brightnessFromSchedule(schedule, manualBrightness) {
+  if (!schedule || !schedule.enabled) return manualBrightness;
+  const now = new Date();
+  const minsNow = now.getHours() * 60 + now.getMinutes();
+  const parse = (t) => {
+    const [h, m] = t.split(':').map(Number);
+    return h * 60 + m;
+  };
+  const dimAt = parse(schedule.dimAt);
+  const brightAt = parse(schedule.brightAt);
+  // "bright window" runs from brightAt (inclusive) to dimAt (exclusive)
+  const inBrightWindow = brightAt < dimAt
+    ? (minsNow >= brightAt && minsNow < dimAt)
+    : (minsNow >= brightAt || minsNow < dimAt);  // crosses midnight
+  return inBrightWindow ? schedule.brightTo : schedule.dimTo;
+}
+
+async function pollSettings() {
+  if (!config.apiUrl) return;
+  try {
+    const r = await fetch(config.apiUrl.replace(/\/+$/, '') + '/brightness', { cache: 'no-store' });
+    if (!r.ok) return;
+    const s = await r.json();
+    const target = brightnessFromSchedule(s.schedule, s.brightness);
+    applyBrightness(target);
+    applyTheme(s.theme);
+  } catch {}
+}
+
+// Poll on a short interval so phone changes feel near-instant.
+pollSettings();
+setInterval(pollSettings, 5_000);
+// Also re-evaluate the schedule every minute (so dimming kicks in on time even if no phone activity)
+setInterval(pollSettings, 60_000);
 </script>
 </body>
 </html>
