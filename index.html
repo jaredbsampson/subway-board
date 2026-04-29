@@ -1,0 +1,793 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>UPTOWN — A Departures Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,700;1,9..144,500&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  /* ---------- THEME TOKENS ---------- */
+  :root {
+    --paper:        #f1ead8;
+    --paper-2:      #ebe2c8;
+    --ink:          #11212f;
+    --ink-soft:     #41525e;
+    --ink-faint:    #7d8993;
+    --rule:         #c8bf9f;
+    --accent:       #b03a2e;     /* warm red, for "boarding" */
+    --accent-soft:  #d6735f;
+    --shadow:       0 1px 0 rgba(17,33,47,.08), 0 30px 60px -30px rgba(17,33,47,.25);
+  }
+  [data-theme="midnight"] {
+    --paper:        #0d1117;
+    --paper-2:      #131a22;
+    --ink:          #e9d9b1;     /* warm cream, like an old annunciator lamp */
+    --ink-soft:     #b9a983;
+    --ink-faint:    #6f6649;
+    --rule:         #2a2a25;
+    --accent:       #ff7a59;
+    --accent-soft:  #ffb199;
+    --shadow:       0 1px 0 rgba(0,0,0,.4), 0 30px 60px -30px rgba(0,0,0,.7);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; }
+  body {
+    font-family: 'Fraunces', Georgia, serif;
+    background: var(--paper);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+    min-height: 100vh;
+    transition: background .6s ease, color .6s ease;
+  }
+  /* paper grain — pure CSS, no images */
+  body::before {
+    content: "";
+    position: fixed; inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(1200px 800px at 50% -20%, rgba(255,255,255,.35), transparent 60%),
+      radial-gradient(800px 600px at 100% 100%, rgba(0,0,0,.05), transparent 60%);
+    mix-blend-mode: multiply;
+    z-index: 0;
+  }
+  [data-theme="midnight"] body::before,
+  body[data-theme="midnight"]::before {
+    background:
+      radial-gradient(1200px 800px at 50% -20%, rgba(255,200,140,.06), transparent 60%),
+      radial-gradient(800px 600px at 100% 100%, rgba(255,150,100,.03), transparent 60%);
+  }
+
+  .frame {
+    position: relative; z-index: 1;
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 56px 40px 80px;
+  }
+  @media (max-width: 600px) { .frame { padding: 28px 22px 60px; } }
+
+  /* ---------- MASTHEAD ---------- */
+  .masthead {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: end;
+    gap: 16px;
+    padding-bottom: 14px;
+    border-bottom: 2px solid var(--ink);
+    margin-bottom: 6px;
+  }
+  .masthead .left, .masthead .right {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 11px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .masthead .right { justify-content: flex-end; }
+  .masthead h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-variation-settings: "opsz" 144;
+    font-size: clamp(40px, 7vw, 68px);
+    letter-spacing: -.02em;
+    line-height: 1;
+    margin: 0;
+    text-align: center;
+    font-style: italic;
+  }
+  .masthead h1 em {
+    font-style: normal;
+    font-weight: 300;
+    color: var(--ink-soft);
+  }
+  .pulse {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 0 var(--accent);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(176,58,46,.6); }
+    70%  { box-shadow: 0 0 0 10px rgba(176,58,46,0); }
+    100% { box-shadow: 0 0 0 0 rgba(176,58,46,0); }
+  }
+  .subline {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    padding: 8px 2px 28px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  /* ---------- STATION BLOCK ---------- */
+  .station {
+    margin-top: 36px;
+    opacity: 0;
+    transform: translateY(8px);
+    animation: rise .7s cubic-bezier(.2,.7,.2,1) forwards;
+  }
+  .station:nth-child(2) { animation-delay: .12s; }
+  @keyframes rise {
+    to { opacity: 1; transform: none; }
+  }
+
+  .station-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .station-name {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-variation-settings: "opsz" 144;
+    font-size: clamp(26px, 4.5vw, 38px);
+    letter-spacing: -.015em;
+    line-height: 1.05;
+    margin: 0;
+  }
+  .station-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    white-space: nowrap;
+  }
+  .station-rule {
+    height: 1px;
+    background: var(--ink);
+    margin-bottom: 4px;
+  }
+  .station-rule.thin { background: var(--rule); }
+
+  /* ---------- ARRIVAL ROWS ---------- */
+  .row {
+    display: grid;
+    grid-template-columns: 56px 1fr auto;
+    align-items: center;
+    gap: 18px;
+    padding: 16px 4px;
+    border-bottom: 1px solid var(--rule);
+    transition: background .2s ease;
+  }
+  .row:hover { background: rgba(0,0,0,.02); }
+  [data-theme="midnight"] .row:hover { background: rgba(255,255,255,.02); }
+  .row.boarding .mins { color: var(--accent); }
+  .row.boarding .bullet { box-shadow: 0 0 0 3px rgba(176,58,46,.18); }
+
+  .bullet {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    display: grid; place-items: center;
+    color: #fff;
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: 22px;
+    font-style: normal;
+    letter-spacing: -.02em;
+    flex-shrink: 0;
+    box-shadow: inset 0 -2px 0 rgba(0,0,0,.18);
+  }
+  /* MTA route colors */
+  .b-1, .b-2, .b-3        { background: #ee352e; }
+  .b-4, .b-5, .b-6        { background: #00933c; }
+  .b-7                    { background: #b933ad; }
+  .b-A, .b-C, .b-E        { background: #2850ad; }
+  .b-B, .b-D, .b-F, .b-M  { background: #ff6319; }
+  .b-G                    { background: #6cbe45; }
+  .b-J, .b-Z              { background: #996633; }
+  .b-L                    { background: #a7a9ac; }
+  .b-N, .b-Q, .b-R, .b-W  { background: #fccc0a; color: #11212f; }
+  .b-S                    { background: #808183; }
+
+  .destination {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+  .borough {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: clamp(20px, 3.2vw, 26px);
+    letter-spacing: -.01em;
+    line-height: 1.1;
+  }
+  .terminus {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .mins {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 500;
+    font-size: clamp(28px, 5vw, 38px);
+    letter-spacing: -.02em;
+    text-align: right;
+    line-height: 1;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+    min-width: 90px;
+  }
+  .mins .unit {
+    display: block;
+    font-size: 9px;
+    letter-spacing: .25em;
+    color: var(--ink-faint);
+    margin-top: 6px;
+    text-transform: uppercase;
+    font-weight: 400;
+  }
+  .mins.now {
+    color: var(--accent);
+    font-style: italic;
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+  }
+
+  .empty {
+    padding: 24px 4px;
+    color: var(--ink-faint);
+    font-style: italic;
+    font-size: 14px;
+    text-align: center;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  /* ---------- FOOTER + CONTROLS ---------- */
+  .footer {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 2px solid var(--ink);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .controls {
+    position: fixed;
+    top: 16px; right: 16px;
+    display: flex; gap: 6px;
+    z-index: 10;
+  }
+  .controls button {
+    width: 36px; height: 36px;
+    border: 1px solid var(--rule);
+    background: var(--paper-2);
+    color: var(--ink);
+    border-radius: 50%;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    display: grid; place-items: center;
+    transition: all .2s;
+  }
+  .controls button:hover {
+    border-color: var(--ink);
+    transform: translateY(-1px);
+  }
+
+  /* ---------- SETTINGS SHEET ---------- */
+  .sheet-bg {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.4);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .3s;
+  }
+  .sheet-bg.open { opacity: 1; pointer-events: auto; }
+  .sheet {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -48%) scale(.96);
+    width: min(440px, calc(100vw - 32px));
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 32px 28px 28px;
+    z-index: 101;
+    opacity: 0;
+    pointer-events: none;
+    transition: all .3s cubic-bezier(.2,.7,.2,1);
+    box-shadow: var(--shadow);
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .sheet.open {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+    pointer-events: auto;
+  }
+  .sheet h2 {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 500;
+    font-size: 26px;
+    margin: 0 0 4px;
+    letter-spacing: -.01em;
+  }
+  .sheet .hint {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 24px;
+  }
+  .field {
+    margin-bottom: 18px;
+  }
+  .field label {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+  }
+  .field input, .field select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--rule);
+    background: var(--paper-2);
+    color: var(--ink);
+    font-family: 'Fraunces', serif;
+    font-size: 16px;
+    border-radius: 3px;
+  }
+  .field input:focus, .field select:focus {
+    outline: none;
+    border-color: var(--ink);
+  }
+  .toggle-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-top: 1px solid var(--rule);
+  }
+  .toggle-row:first-of-type { border-top: none; }
+  .toggle-row span {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+  }
+  .switch {
+    width: 40px; height: 22px;
+    background: var(--rule);
+    border-radius: 22px;
+    position: relative;
+    cursor: pointer;
+    transition: background .2s;
+  }
+  .switch.on { background: var(--accent); }
+  .switch::after {
+    content: "";
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 18px; height: 18px;
+    background: var(--paper);
+    border-radius: 50%;
+    transition: transform .2s;
+  }
+  .switch.on::after { transform: translateX(18px); }
+  .save-btn {
+    margin-top: 20px;
+    width: 100%;
+    padding: 12px;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    border-radius: 3px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: opacity .2s;
+  }
+  .save-btn:hover { opacity: .85; }
+
+  .status-bar {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-faint);
+    letter-spacing: .14em;
+    text-transform: uppercase;
+  }
+  .status-bar.warn { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="controls">
+  <button id="theme-btn" title="Toggle theme">◐</button>
+  <button id="settings-btn" title="Settings">⚙</button>
+</div>
+
+<div class="frame">
+  <header class="masthead">
+    <div class="left"><span class="pulse"></span><span id="status">LIVE</span></div>
+    <h1>Uptown <em>Departures</em></h1>
+    <div class="right"><span id="clock">—:—</span></div>
+  </header>
+  <div class="subline">
+    <span id="dateline">—</span>
+    <span>96th Street · Upper West Side</span>
+    <span id="updated">UPDATED —</span>
+  </div>
+
+  <section class="station" id="station-1">
+    <div class="station-header">
+      <h2 class="station-name">96<span style="font-size:.6em;vertical-align:super">th</span> Street &nbsp;·&nbsp; <em style="font-style:italic;font-weight:300;color:var(--ink-soft)">Broadway</em></h2>
+      <div class="station-meta" id="meta-1">1 · 2 · 3</div>
+    </div>
+    <div class="station-rule"></div>
+    <div class="station-rule thin" style="margin-bottom:8px"></div>
+    <div id="arrivals-1"><div class="empty">Loading arrivals…</div></div>
+  </section>
+
+  <section class="station" id="station-2">
+    <div class="station-header">
+      <h2 class="station-name">96<span style="font-size:.6em;vertical-align:super">th</span> Street &nbsp;·&nbsp; <em style="font-style:italic;font-weight:300;color:var(--ink-soft)">Central Park West</em></h2>
+      <div class="station-meta" id="meta-2">B · C</div>
+    </div>
+    <div class="station-rule"></div>
+    <div class="station-rule thin" style="margin-bottom:8px"></div>
+    <div id="arrivals-2"><div class="empty">Loading arrivals…</div></div>
+  </section>
+
+  <footer class="footer">
+    <span>NO. 1 &nbsp;·&nbsp; VOL. I</span>
+    <span class="status-bar" id="footer-status">A LIVING SCHEDULE · MTA REAL-TIME</span>
+    <span>UWS</span>
+  </footer>
+</div>
+
+<!-- Settings sheet -->
+<div class="sheet-bg" id="sheet-bg"></div>
+<div class="sheet" id="sheet">
+  <h2>Settings</h2>
+  <div class="hint">Tailor the board</div>
+
+  <div class="field">
+    <label>Station 1 — Stop ID</label>
+    <input id="s1-id" value="120" />
+  </div>
+  <div class="field">
+    <label>Station 1 — Display name</label>
+    <input id="s1-name" value="96th Street" />
+  </div>
+  <div class="field">
+    <label>Station 1 — Subtitle</label>
+    <input id="s1-sub" value="Broadway" />
+  </div>
+
+  <div class="field" style="margin-top:24px">
+    <label>Station 2 — Stop ID</label>
+    <input id="s2-id" value="A14" />
+  </div>
+  <div class="field">
+    <label>Station 2 — Display name</label>
+    <input id="s2-name" value="96th Street" />
+  </div>
+  <div class="field">
+    <label>Station 2 — Subtitle</label>
+    <input id="s2-sub" value="Central Park West" />
+  </div>
+
+  <div class="toggle-row">
+    <span>Midnight Theme</span>
+    <div class="switch" id="theme-switch"></div>
+  </div>
+  <div class="toggle-row">
+    <span>Show as Clock Time</span>
+    <div class="switch" id="clock-switch"></div>
+  </div>
+  <div class="toggle-row">
+    <span>Demo Data (no API)</span>
+    <div class="switch" id="demo-switch"></div>
+  </div>
+
+  <button class="save-btn" id="save-btn">Save & Refresh</button>
+  <div class="hint" style="margin-top:14px;text-align:center">
+    Stop IDs use MTA GTFS format. 120 = 96 St (1/2/3). A14 = 96 St (B/C).
+  </div>
+</div>
+
+<script>
+/* ----------------------------------------------------------------
+   Subway Departures Board
+   Data source: goodservice.io public API (used by Subway Now lite).
+   Falls back through corsproxy.io if direct CORS fails.
+   Falls back to demo data if both fail (so the board always looks alive).
+---------------------------------------------------------------- */
+
+const config = {
+  stations: [
+    { id: '120', name: '96th Street', sub: 'Broadway',          slot: 1 },
+    { id: 'A14', name: '96th Street', sub: 'Central Park West', slot: 2 },
+  ],
+  showClock: false,
+  demo: false,
+};
+
+// ---------- destination labelling: minimal lookup of common UWS terminals ----------
+const TERMINUS = {
+  // 1 train
+  '101': { borough: 'The Bronx',  name: 'Van Cortlandt Pk–242 St' },
+  '142': { borough: 'Manhattan',  name: 'South Ferry' },
+  // 2 train
+  '201': { borough: 'The Bronx',  name: 'Wakefield–241 St' },
+  '247': { borough: 'Brooklyn',   name: 'Flatbush Av' },
+  // 3 train
+  '301': { borough: 'Harlem',     name: '148 St' },
+  '257': { borough: 'Brooklyn',   name: 'New Lots Av' },
+  // B
+  'D01': { borough: 'The Bronx',  name: 'Bedford Park Bd' },
+  'D03': { borough: 'The Bronx',  name: 'Norwood–205 St' },
+  'D43': { borough: 'Brooklyn',   name: 'Brighton Beach' },
+  // C
+  'A09': { borough: 'Manhattan',  name: '168 St–Washington Hts' },
+  'A02': { borough: 'Manhattan',  name: 'Inwood–207 St' },
+  'A55': { borough: 'Brooklyn',   name: 'Euclid Av' },
+};
+
+function destFor(routeId, stopId) {
+  if (TERMINUS[stopId]) return TERMINUS[stopId];
+  // sensible guess by direction letter
+  const dir = stopId.endsWith('N') ? 'N' : stopId.endsWith('S') ? 'S' : null;
+  if (dir === 'N') return { borough: 'Uptown',   name: routeId + ' train' };
+  if (dir === 'S') return { borough: 'Downtown', name: routeId + ' train' };
+  return { borough: '—', name: routeId + ' train' };
+}
+
+// ---------- demo data so the board never looks empty ----------
+function demoData(stopId) {
+  const now = Date.now();
+  const m = (n) => now + n * 60 * 1000;
+  if (stopId === '120') return [
+    { route_id: '1', stop_id: '120N', estimated_current_stop_arrival_time: m(2) },
+    { route_id: '2', stop_id: '120N', estimated_current_stop_arrival_time: m(5) },
+    { route_id: '1', stop_id: '120S', estimated_current_stop_arrival_time: m(7) },
+    { route_id: '3', stop_id: '120N', estimated_current_stop_arrival_time: m(11) },
+    { route_id: '2', stop_id: '120S', estimated_current_stop_arrival_time: m(14) },
+  ];
+  if (stopId === 'A14') return [
+    { route_id: 'C', stop_id: 'A14N', estimated_current_stop_arrival_time: m(3) },
+    { route_id: 'B', stop_id: 'A14N', estimated_current_stop_arrival_time: m(6) },
+    { route_id: 'C', stop_id: 'A14S', estimated_current_stop_arrival_time: m(9) },
+    { route_id: 'B', stop_id: 'A14S', estimated_current_stop_arrival_time: m(13) },
+  ];
+  return [];
+}
+
+// ---------- fetch ----------
+async function fetchStation(stopId) {
+  if (config.demo) return demoData(stopId);
+  const direct = `https://www.goodservice.io/api/stops/${stopId}`;
+  const proxied = `https://corsproxy.io/?url=${encodeURIComponent(direct)}`;
+  for (const url of [direct, proxied]) {
+    try {
+      const r = await fetch(url, { cache: 'no-store' });
+      if (!r.ok) continue;
+      const data = await r.json();
+      // goodservice's /api/stops/:id shape varies; we normalize to a flat list of upcoming trains.
+      // shape: { upcoming_trips: { <route_id>: { N: [...], S: [...] } } }
+      // each entry has estimated_current_stop_arrival_time (unix seconds)
+      const out = [];
+      const t = data.upcoming_trips || {};
+      for (const route of Object.keys(t)) {
+        for (const dir of ['N','S']) {
+          (t[route]?.[dir] || []).forEach(trip => {
+            const arr = trip.estimated_current_stop_arrival_time;
+            if (!arr) return;
+            out.push({
+              route_id: route,
+              stop_id: stopId + dir,
+              estimated_current_stop_arrival_time: arr * 1000,
+              destination_stop: trip.destination_stop,
+            });
+          });
+        }
+      }
+      return out;
+    } catch(e) { /* try next */ }
+  }
+  // both fetches failed — fall back to demo so the board doesn't go blank
+  setStatus('OFFLINE — DEMO', true);
+  return demoData(stopId);
+}
+
+// ---------- render ----------
+function fmtMins(ts) {
+  const diff = (ts - Date.now()) / 60000;
+  if (diff < 0.5) return { text: 'now', html: '<span class="mins now">now<span class="unit">arriving</span></span>' };
+  const mins = Math.round(diff);
+  return { text: mins + 'm', html: `<span class="mins">${mins}<span class="unit">${mins===1?'minute':'minutes'}</span></span>` };
+}
+function fmtClock(ts) {
+  const d = new Date(ts);
+  const h = d.getHours();
+  const m = d.getMinutes();
+  const ampm = h >= 12 ? 'pm' : 'am';
+  const hh = ((h + 11) % 12) + 1;
+  return `<span class="mins">${hh}:${m.toString().padStart(2,'0')}<span class="unit">${ampm}</span></span>`;
+}
+
+function renderArrivals(slot, arrivals) {
+  const target = document.getElementById('arrivals-' + slot);
+  if (!arrivals.length) {
+    target.innerHTML = '<div class="empty">No upcoming trains.</div>';
+    return;
+  }
+  arrivals.sort((a,b) => a.estimated_current_stop_arrival_time - b.estimated_current_stop_arrival_time);
+  const top = arrivals.slice(0, 6);
+  target.innerHTML = top.map(a => {
+    const dest = a.destination_stop && TERMINUS[a.destination_stop]
+      ? TERMINUS[a.destination_stop]
+      : destFor(a.route_id, a.stop_id);
+    const minsTxt = (a.estimated_current_stop_arrival_time - Date.now()) / 60000;
+    const boarding = minsTxt < 1 ? ' boarding' : '';
+    const minsHtml = config.showClock
+      ? fmtClock(a.estimated_current_stop_arrival_time)
+      : fmtMins(a.estimated_current_stop_arrival_time).html;
+    return `
+      <div class="row${boarding}">
+        <div class="bullet b-${a.route_id}">${a.route_id}</div>
+        <div class="destination">
+          <div class="borough">${dest.borough}</div>
+          <div class="terminus">${dest.name}</div>
+        </div>
+        ${minsHtml}
+      </div>
+    `;
+  }).join('');
+}
+
+// ---------- chrome ----------
+function setStatus(t, warn) {
+  const s = document.getElementById('status');
+  const f = document.getElementById('footer-status');
+  s.textContent = t;
+  f.textContent = warn ? 'CONNECTION OFFLINE · SHOWING DEMO DATA' : 'A LIVING SCHEDULE · MTA REAL-TIME';
+  f.classList.toggle('warn', !!warn);
+}
+function tickClock() {
+  const d = new Date();
+  const h = d.getHours();
+  const m = d.getMinutes();
+  const ampm = h >= 12 ? 'pm' : 'am';
+  const hh = ((h + 11) % 12) + 1;
+  document.getElementById('clock').textContent =
+    `${hh}:${m.toString().padStart(2,'0')} ${ampm}`;
+  const days = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+  const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  document.getElementById('dateline').textContent =
+    `${days[d.getDay()]} ${months[d.getMonth()]} ${d.getDate()}`;
+}
+
+async function refresh() {
+  const tasks = config.stations.map(async (st) => {
+    const arrivals = await fetchStation(st.id);
+    renderArrivals(st.slot, arrivals);
+  });
+  await Promise.all(tasks);
+  const t = new Date();
+  document.getElementById('updated').textContent =
+    `UPDATED ${t.getHours().toString().padStart(2,'0')}:${t.getMinutes().toString().padStart(2,'0')}:${t.getSeconds().toString().padStart(2,'0')}`;
+  setStatus(config.demo ? 'DEMO' : 'LIVE', config.demo);
+}
+
+// ---------- settings sheet wiring ----------
+const sheet = document.getElementById('sheet');
+const bg = document.getElementById('sheet-bg');
+function openSheet() {
+  document.getElementById('s1-id').value   = config.stations[0].id;
+  document.getElementById('s1-name').value = config.stations[0].name;
+  document.getElementById('s1-sub').value  = config.stations[0].sub;
+  document.getElementById('s2-id').value   = config.stations[1].id;
+  document.getElementById('s2-name').value = config.stations[1].name;
+  document.getElementById('s2-sub').value  = config.stations[1].sub;
+  setSwitch('theme-switch', document.documentElement.dataset.theme === 'midnight');
+  setSwitch('clock-switch', config.showClock);
+  setSwitch('demo-switch',  config.demo);
+  sheet.classList.add('open'); bg.classList.add('open');
+}
+function closeSheet() { sheet.classList.remove('open'); bg.classList.remove('open'); }
+function setSwitch(id, on) { document.getElementById(id).classList.toggle('on', !!on); }
+
+document.getElementById('settings-btn').addEventListener('click', openSheet);
+bg.addEventListener('click', closeSheet);
+
+['theme-switch','clock-switch','demo-switch'].forEach(id => {
+  document.getElementById(id).addEventListener('click', () =>
+    document.getElementById(id).classList.toggle('on'));
+});
+
+document.getElementById('theme-btn').addEventListener('click', () => {
+  const root = document.documentElement;
+  root.dataset.theme = root.dataset.theme === 'midnight' ? '' : 'midnight';
+});
+
+document.getElementById('save-btn').addEventListener('click', () => {
+  config.stations[0] = {
+    id: document.getElementById('s1-id').value.trim(),
+    name: document.getElementById('s1-name').value.trim(),
+    sub: document.getElementById('s1-sub').value.trim(),
+    slot: 1
+  };
+  config.stations[1] = {
+    id: document.getElementById('s2-id').value.trim(),
+    name: document.getElementById('s2-name').value.trim(),
+    sub: document.getElementById('s2-sub').value.trim(),
+    slot: 2
+  };
+  // update headers
+  document.querySelector('#station-1 .station-name').innerHTML =
+    `${config.stations[0].name} &nbsp;·&nbsp; <em style="font-style:italic;font-weight:300;color:var(--ink-soft)">${config.stations[0].sub}</em>`;
+  document.querySelector('#station-2 .station-name').innerHTML =
+    `${config.stations[1].name} &nbsp;·&nbsp; <em style="font-style:italic;font-weight:300;color:var(--ink-soft)">${config.stations[1].sub}</em>`;
+
+  config.showClock = document.getElementById('clock-switch').classList.contains('on');
+  config.demo      = document.getElementById('demo-switch').classList.contains('on');
+  document.documentElement.dataset.theme =
+    document.getElementById('theme-switch').classList.contains('on') ? 'midnight' : '';
+  closeSheet();
+  refresh();
+});
+
+// ---------- boot ----------
+tickClock();
+setInterval(tickClock, 1000);
+refresh();
+setInterval(refresh, 30000);  // every 30s, like the real countdown clocks
+</script>
+</body>
+</html>

@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="theme-color" content="#11212f" />
+<title>Board Control</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,700;1,9..144,500&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg:        #f1ead8;
+    --bg-2:      #ebe2c8;
+    --ink:       #11212f;
+    --ink-soft:  #41525e;
+    --ink-faint: #7d8993;
+    --rule:      #c8bf9f;
+    --accent:    #b03a2e;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; min-height: 100%; }
+  body {
+    font-family: 'Fraunces', Georgia, serif;
+    background: var(--bg);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+    padding-bottom: 40px;
+  }
+  .frame { max-width: 480px; margin: 0 auto; padding: 32px 22px; }
+
+  header {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: end;
+    gap: 12px;
+    padding-bottom: 14px;
+    border-bottom: 2px solid var(--ink);
+    margin-bottom: 4px;
+  }
+  header h1 {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 500;
+    font-size: 36px;
+    letter-spacing: -.02em;
+    line-height: 1;
+    margin: 0;
+  }
+  header .status {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .pulse {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 0 var(--accent);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(176,58,46,.6); }
+    70%  { box-shadow: 0 0 0 8px rgba(176,58,46,0); }
+    100% { box-shadow: 0 0 0 0 rgba(176,58,46,0); }
+  }
+  .subline {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    padding: 8px 2px 24px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  section {
+    margin-top: 32px;
+  }
+  section h2 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: .25em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin: 0 0 14px;
+    font-weight: 500;
+  }
+
+  /* brightness slider */
+  .brightness {
+    background: var(--bg-2);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 22px 18px;
+  }
+  .brightness-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .brightness-label {
+    font-family: 'Fraunces', serif;
+    font-size: 18px;
+    font-weight: 500;
+  }
+  .brightness-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 24px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+  }
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    background: var(--rule);
+    border-radius: 3px;
+    outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--ink);
+    cursor: pointer;
+    border: 3px solid var(--bg);
+    box-shadow: 0 1px 4px rgba(0,0,0,.25);
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--ink);
+    cursor: pointer;
+    border: 3px solid var(--bg);
+  }
+
+  .quick-buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    margin-top: 16px;
+  }
+  .quick-buttons button {
+    padding: 10px 4px;
+    background: transparent;
+    border: 1px solid var(--rule);
+    color: var(--ink-soft);
+    border-radius: 3px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .quick-buttons button:active {
+    background: var(--ink);
+    color: var(--bg);
+    border-color: var(--ink);
+  }
+
+  /* theme toggle */
+  .theme-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .theme-row button {
+    padding: 16px;
+    border: 1px solid var(--rule);
+    background: var(--bg-2);
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 500;
+    font-size: 16px;
+    color: var(--ink-soft);
+    text-align: center;
+    transition: all .15s;
+  }
+  .theme-row button.active {
+    border-color: var(--ink);
+    color: var(--ink);
+    background: var(--bg);
+    box-shadow: inset 0 -3px 0 var(--accent);
+  }
+
+  /* schedule */
+  .schedule {
+    background: var(--bg-2);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 18px;
+  }
+  .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-top: 1px solid var(--rule);
+  }
+  .row:first-child { border-top: none; padding-top: 0; }
+  .row label {
+    font-family: 'Fraunces', serif;
+    font-size: 16px;
+    font-weight: 500;
+  }
+  .row input[type="time"] {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px;
+    background: transparent;
+    border: 1px solid var(--rule);
+    padding: 6px 10px;
+    border-radius: 3px;
+    color: var(--ink);
+    width: 110px;
+    text-align: center;
+  }
+  .switch {
+    width: 44px; height: 24px;
+    background: var(--rule);
+    border-radius: 24px;
+    position: relative;
+    cursor: pointer;
+    transition: background .2s;
+    flex-shrink: 0;
+  }
+  .switch.on { background: var(--accent); }
+  .switch::after {
+    content: "";
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 20px; height: 20px;
+    background: var(--bg);
+    border-radius: 50%;
+    transition: transform .2s;
+  }
+  .switch.on::after { transform: translateX(20px); }
+
+  /* footer */
+  footer {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 2px solid var(--ink);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    text-align: center;
+  }
+
+  .saving {
+    position: fixed;
+    bottom: 16px; left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--ink);
+    color: var(--bg);
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    transition: transform .25s;
+    z-index: 100;
+  }
+  .saving.show { transform: translateX(-50%) translateY(0); }
+
+  .api-config {
+    margin-top: 32px;
+    padding: 14px;
+    background: var(--bg-2);
+    border: 1px dashed var(--rule);
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-faint);
+  }
+  .api-config input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--rule);
+    background: var(--bg);
+    border-radius: 3px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink);
+    margin-top: 6px;
+  }
+</style>
+</head>
+<body>
+
+<div class="frame">
+  <header>
+    <h1>Board <em style="font-weight:300;color:var(--ink-soft)">Control</em></h1>
+    <div class="status"><span class="pulse"></span><span id="status">CONNECTED</span></div>
+  </header>
+  <div class="subline">
+    <span>96th Street departures · phone control</span>
+  </div>
+
+  <section>
+    <h2>Brightness</h2>
+    <div class="brightness">
+      <div class="brightness-row">
+        <span class="brightness-label">Display</span>
+        <span class="brightness-value"><span id="bvalue">100</span>%</span>
+      </div>
+      <input type="range" id="brightness" min="10" max="100" value="100" step="5" />
+      <div class="quick-buttons">
+        <button data-b="20">Dim</button>
+        <button data-b="50">Low</button>
+        <button data-b="80">Med</button>
+        <button data-b="100">Full</button>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Theme</h2>
+    <div class="theme-row">
+      <button data-theme="paper" id="theme-paper" class="active">Paper</button>
+      <button data-theme="midnight" id="theme-midnight">Midnight</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Auto-Schedule</h2>
+    <div class="schedule">
+      <div class="row">
+        <label>Enabled</label>
+        <div class="switch on" id="sched-on"></div>
+      </div>
+      <div class="row">
+        <label>Dim at</label>
+        <input type="time" id="dim-at" value="22:00" />
+      </div>
+      <div class="row">
+        <label>Dim to</label>
+        <input type="time" id="dim-to-display" disabled value="" style="visibility:hidden" />
+        <span class="brightness-value" id="dim-to-label">30%</span>
+      </div>
+      <div class="row">
+        <label>Bright at</label>
+        <input type="time" id="bright-at" value="07:00" />
+      </div>
+    </div>
+  </section>
+
+  <div class="api-config">
+    API URL (saved on this device)
+    <input id="api-url" placeholder="https://subway-board-api.yourname.workers.dev" />
+  </div>
+
+  <footer>
+    NO. 1 · VOL. I · BOARD CONTROL
+  </footer>
+</div>
+
+<div class="saving" id="saving">SAVED</div>
+
+<script>
+const apiUrlInput = document.getElementById('api-url');
+let apiUrl = localStorage.getItem('subway-api-url') || '';
+apiUrlInput.value = apiUrl;
+apiUrlInput.addEventListener('change', () => {
+  apiUrl = apiUrlInput.value.trim().replace(/\/+$/, '');
+  localStorage.setItem('subway-api-url', apiUrl);
+  load();
+});
+
+let state = {
+  brightness: 100,
+  theme: 'paper',
+  schedule: { enabled: true, dimAt: '22:00', dimTo: 30, brightAt: '07:00', brightTo: 100 },
+};
+
+const $ = id => document.getElementById(id);
+const showSaved = () => {
+  const el = $('saving');
+  el.textContent = 'SAVED';
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 1200);
+};
+const showError = (msg) => {
+  const el = $('saving');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2400);
+};
+
+function applyToUI() {
+  $('brightness').value = state.brightness;
+  $('bvalue').textContent = state.brightness;
+  document.querySelectorAll('[data-theme]').forEach(b => {
+    b.classList.toggle('active', b.dataset.theme === state.theme);
+  });
+  $('sched-on').classList.toggle('on', state.schedule.enabled);
+  $('dim-at').value = state.schedule.dimAt;
+  $('bright-at').value = state.schedule.brightAt;
+  $('dim-to-label').textContent = state.schedule.dimTo + '%';
+}
+
+async function load() {
+  if (!apiUrl) { $('status').textContent = 'NO API'; return; }
+  try {
+    const r = await fetch(apiUrl + '/brightness', { cache: 'no-store' });
+    if (!r.ok) throw new Error(r.status);
+    state = await r.json();
+    applyToUI();
+    $('status').textContent = 'CONNECTED';
+  } catch (e) {
+    $('status').textContent = 'OFFLINE';
+  }
+}
+
+let saveTimer = null;
+async function save(partial) {
+  Object.assign(state, partial);
+  if (partial.schedule) state.schedule = { ...state.schedule, ...partial.schedule };
+  applyToUI();
+  if (!apiUrl) { showError('Set API URL first'); return; }
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    try {
+      const r = await fetch(apiUrl + '/brightness', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(partial),
+      });
+      if (!r.ok) throw new Error(r.status);
+      state = await r.json();
+      applyToUI();
+      showSaved();
+    } catch (e) {
+      showError('SAVE FAILED');
+    }
+  }, 250);
+}
+
+// brightness slider
+$('brightness').addEventListener('input', e => {
+  $('bvalue').textContent = e.target.value;
+});
+$('brightness').addEventListener('change', e => {
+  save({ brightness: Number(e.target.value) });
+});
+
+// quick buttons
+document.querySelectorAll('.quick-buttons button').forEach(b => {
+  b.addEventListener('click', () => save({ brightness: Number(b.dataset.b) }));
+});
+
+// theme buttons
+document.querySelectorAll('[data-theme]').forEach(b => {
+  b.addEventListener('click', () => save({ theme: b.dataset.theme }));
+});
+
+// schedule
+$('sched-on').addEventListener('click', () => {
+  save({ schedule: { enabled: !state.schedule.enabled } });
+});
+$('dim-at').addEventListener('change', e => {
+  save({ schedule: { dimAt: e.target.value } });
+});
+$('bright-at').addEventListener('change', e => {
+  save({ schedule: { brightAt: e.target.value } });
+});
+
+load();
+setInterval(load, 30_000);  // re-pull state every 30s in case other phone changes it
+</script>
+</body>
+</html>
