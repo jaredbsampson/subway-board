@@ -550,6 +550,7 @@
 ---------------------------------------------------------------- */
 
 const config = {
+  apiBase: localStorage.getItem('subway-api-url') || 'https://subway-board-api.jared-b-sampson.workers.dev',
   stations: [
     { id: '120', name: '96th Street', sub: 'Broadway',          slot: 1 },
     { id: 'A14', name: '96th Street', sub: 'Central Park West', slot: 2 },
@@ -611,38 +612,24 @@ function demoData(stopId) {
 // ---------- fetch ----------
 async function fetchStation(stopId) {
   if (config.demo) return demoData(stopId);
-  const direct = `https://www.goodservice.io/api/stops/${stopId}`;
-  const proxied = `https://corsproxy.io/?url=${encodeURIComponent(direct)}`;
-  for (const url of [direct, proxied]) {
-    try {
-      const r = await fetch(url, { cache: 'no-store' });
-      if (!r.ok) continue;
-      const data = await r.json();
-      // goodservice's /api/stops/:id shape varies; we normalize to a flat list of upcoming trains.
-      // shape: { upcoming_trips: { <route_id>: { N: [...], S: [...] } } }
-      // each entry has estimated_current_stop_arrival_time (unix seconds)
-      const out = [];
-      const t = data.upcoming_trips || {};
-      for (const route of Object.keys(t)) {
-        for (const dir of ['N','S']) {
-          (t[route]?.[dir] || []).forEach(trip => {
-            const arr = trip.estimated_current_stop_arrival_time;
-            if (!arr) return;
-            out.push({
-              route_id: route,
-              stop_id: stopId + dir,
-              estimated_current_stop_arrival_time: arr * 1000,
-              destination_stop: trip.destination_stop,
-            });
-          });
-        }
-      }
-      return out;
-    } catch(e) { /* try next */ }
+  if (!config.apiBase) {
+    setStatus('OFFLINE — DEMO', true);
+    return demoData(stopId);
   }
-  // both fetches failed — fall back to demo so the board doesn't go blank
-  setStatus('OFFLINE — DEMO', true);
-  return demoData(stopId);
+  try {
+    const r = await fetch(`${config.apiBase}/?stops=${encodeURIComponent(stopId)}`, { cache: 'no-store' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+    const list = data.stops?.[stopId] || [];
+    return list.map(a => ({
+      route_id: a.route,
+      stop_id: a.stop_id,
+      estimated_current_stop_arrival_time: a.arrival * 1000,
+    }));
+  } catch (e) {
+    setStatus('OFFLINE — DEMO', true);
+    return demoData(stopId);
+  }
 }
 
 // ---------- render ----------
