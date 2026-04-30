@@ -844,6 +844,14 @@ function renderArrivals(slot, arrivals) {
   if (!arrivals) arrivals = [];
   arrivals.sort((a,b) => a.arrival - b.arrival);
 
+  // In late modes, drop trains whose shifted arrival has already passed —
+  // otherwise several trains stack up showing ARRIVING at once.
+  const offset = lateOffsetSec();
+  if (offset > 0) {
+    const nowSec = Math.floor(Date.now() / 1000);
+    arrivals = arrivals.filter(a => (a.arrival - offset) >= nowSec);
+  }
+
   const northbound = arrivals.filter(a => a.direction === 'N').slice(0, 4);
   const southbound = arrivals.filter(a => a.direction === 'S').slice(0, 4);
 
