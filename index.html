@@ -344,6 +344,22 @@
     font-family: 'Fraunces', serif;
     font-weight: 500;
   }
+  /* "ARRIVING" — same size/weight as the mins number, accent red, mono caps */
+  .mins.arriving {
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+
+  /* Late-mode indicator next to the LIVE label in the masthead */
+  .late-indicator {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    margin-left: 4px;
+  }
+  .late-indicator.rushed { color: #d97706; }   /* amber */
+  .late-indicator.panic  { color: var(--accent); }
 
   .empty {
     padding: 24px 4px;
@@ -583,7 +599,7 @@
   <header class="masthead">
     <div class="left">
       <div class="left-stack">
-        <span class="live-line"><span class="pulse"></span><span id="status">LIVE</span></span>
+        <span class="live-line"><span class="pulse"></span><span id="status">LIVE</span><span id="late-indicator" class="late-indicator"></span></span>
         <span id="updated" class="updated-line">UPDATED —</span>
       </div>
     </div>
@@ -764,8 +780,8 @@ async function fetchAllArrivals() {
 // ---------- render ----------
 function fmtMins(ts) {
   const diff = (ts - Date.now()) / 60000;
-  if (diff < 0.5) return { text: 'now', html: '<span class="mins now">now<span class="unit">arriving</span></span>' };
-  const mins = Math.round(diff);
+  const mins = Math.ceil(diff);
+  if (mins <= 0) return { text: 'ARRIVING', html: '<span class="mins arriving">ARRIVING</span>' };
   return { text: mins + 'm', html: `<span class="mins">${mins}<span class="unit">${mins===1?'minute':'minutes'}</span></span>` };
 }
 function fmtClock(ts) {
@@ -783,8 +799,29 @@ function fmtClock(ts) {
 // stops as a local — so we exclude it here for this user's stations.
 const EXPRESS = new Set(['2','3','4','5','A','D','N']);
 
+// "Running Late" mode shifts displayed times earlier so the user leaves the apartment sooner.
+let lateMode = 'normal';
+function lateOffsetSec() {
+  if (lateMode === 'super_late') return 300;  // 5 min
+  if (lateMode === 'late') return 180;        // 3 min
+  return 0;
+}
+function applyLateModeIndicator() {
+  const el = document.getElementById('late-indicator');
+  if (!el) return;
+  el.className = 'late-indicator';
+  el.textContent = '';
+  if (lateMode === 'late') {
+    el.classList.add('rushed');
+    el.textContent = ' · RUSHED';
+  } else if (lateMode === 'super_late') {
+    el.classList.add('panic');
+    el.textContent = ' · PANIC';
+  }
+}
+
 function renderRow(a) {
-  const arrMs = a.arrival * 1000;
+  const arrMs = (a.arrival - lateOffsetSec()) * 1000;
   const minsTxt = (arrMs - Date.now()) / 60000;
   const boarding = minsTxt < 1 ? ' boarding' : '';
   const minsHtml = config.showClock ? fmtClock(arrMs) : fmtMins(arrMs).html;
@@ -934,7 +971,7 @@ tickClock();
 setInterval(tickClock, 1000);
 updateQR();
 refresh();
-setInterval(refresh, 30000);  // every 30s, like the real countdown clocks
+setInterval(refresh, 15000);  // every 15s — matches MTA's real countdown cadence
 // ---------- remote settings polling (brightness / theme / schedule) ----------
 const overlay = document.getElementById('brightness-overlay');
 
@@ -981,6 +1018,12 @@ async function pollSettings() {
     const target = brightnessFromSchedule(s.schedule, s.brightness);
     applyBrightness(target);
     applyTheme(s.theme);
+    const nextLate = s.lateMode || 'normal';
+    if (nextLate !== lateMode) {
+      lateMode = nextLate;
+      applyLateModeIndicator();
+      refresh();  // re-render arrivals with the new time-shift applied
+    }
   } catch {}
 }
 

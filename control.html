@@ -196,6 +196,33 @@
     box-shadow: inset 0 -3px 0 var(--accent);
   }
 
+  /* late-mode (3-button group) */
+  .late-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .late-row button {
+    padding: 14px 4px;
+    border: 1px solid var(--rule);
+    background: var(--bg-2);
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--ink-soft);
+    text-align: center;
+    transition: all .15s;
+  }
+  .late-row button.active {
+    border-color: var(--ink);
+    color: var(--ink);
+    background: var(--bg);
+    box-shadow: inset 0 -3px 0 var(--accent);
+  }
+
   /* schedule */
   .schedule {
     background: var(--bg-2);
@@ -387,6 +414,15 @@
   </section>
 
   <section>
+    <h2>Running Late Mode</h2>
+    <div class="late-row">
+      <button data-late="normal" class="active">Normal</button>
+      <button data-late="late">Running Late</button>
+      <button data-late="super_late">Super Late</button>
+    </div>
+  </section>
+
+  <section>
     <h2>Auto-Schedule</h2>
     <div class="schedule">
       <div class="row">
@@ -549,6 +585,7 @@ controlUrlInput.addEventListener('change', () => {
 let state = {
   brightness: 100,
   theme: 'paper',
+  lateMode: 'normal',
   schedule: { enabled: true, dimAt: '22:00', dimTo: 30, brightAt: '07:00', brightTo: 100 },
 };
 
@@ -571,6 +608,9 @@ function applyToUI() {
   $('bvalue').textContent = state.brightness;
   document.querySelectorAll('[data-theme]').forEach(b => {
     b.classList.toggle('active', b.dataset.theme === state.theme);
+  });
+  document.querySelectorAll('[data-late]').forEach(b => {
+    b.classList.toggle('active', b.dataset.late === (state.lateMode || 'normal'));
   });
   $('sched-on').classList.toggle('on', state.schedule.enabled);
   $('dim-at').value = state.schedule.dimAt;
@@ -631,6 +671,11 @@ document.querySelectorAll('.quick-buttons button').forEach(b => {
 // theme buttons
 document.querySelectorAll('[data-theme]').forEach(b => {
   b.addEventListener('click', () => save({ theme: b.dataset.theme }));
+});
+
+// late-mode buttons
+document.querySelectorAll('[data-late]').forEach(b => {
+  b.addEventListener('click', () => save({ lateMode: b.dataset.late }));
 });
 
 // schedule
