@@ -305,6 +305,23 @@
   }
   .saving.show { transform: translateX(-50%) translateY(0); }
 
+  /* "← Departures" back-link at the top of the page */
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .25em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    text-decoration: none;
+    margin-bottom: 14px;
+    transition: color .2s;
+  }
+  .back-link:hover { color: var(--ink); }
+  .back-link .arrow { font-size: 14px; line-height: 1; }
+
   .api-config {
     margin-top: 32px;
     padding: 14px;
@@ -380,6 +397,7 @@
 <body>
 
 <div class="frame">
+  <a class="back-link" href="index.html"><span class="arrow">←</span><span>Departures</span></a>
   <header>
     <h1>Board <em style="font-weight:300;color:var(--ink-soft)">Control</em></h1>
     <div class="status"><span class="pulse"></span><span id="status">CONNECTED</span></div>
