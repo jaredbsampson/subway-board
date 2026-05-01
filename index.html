@@ -283,6 +283,15 @@
     padding: clamp(14px, 3.07vw, 52px) clamp(12px, 1.62vw, 26px);
     border-bottom: 1px solid var(--rule);
     transition: background .2s ease;
+    /* Pin the row height so ARRIVING / shorter content can't shrink the row.
+       = mins-number height + unit-margin + unit height + padding (top+bottom),
+       all clamps matching the natural max-content row. */
+    min-height: calc(
+      clamp(22px, 7.22vw, 108px)
+      + 4px
+      + clamp(8px, 1.99vw, 22px)
+      + clamp(28px, 6.14vw, 104px)
+    );
   }
   .row:hover { background: rgba(0,0,0,.02); }
   [data-theme="midnight"] .row:hover { background: rgba(255,255,255,.02); }
@@ -392,15 +401,12 @@
     font-family: 'Fraunces', serif;
     font-weight: 500;
   }
-  /* "ARRIVING" — accent red, mono caps, 40% smaller than the mins number
-     because the 8-char word is bulky next to a 1–2 digit number.
-     line-height matches a regular .mins so the row height stays constant
-     and rows in the opposite direction column line up. */
+  /* "ARRIVING" — accent red, mono caps, 40% smaller than the mins number.
+     Sits at natural line-height; the row's min-height keeps the cell aligned. */
   .mins.arriving {
     color: var(--accent);
     text-transform: uppercase;
     font-size: clamp(13px, 4.33vw, 65px);
-    line-height: clamp(22px, 7.22vw, 108px);
   }
 
   /* Late-mode indicator next to the LIVE label in the masthead */
@@ -837,7 +843,7 @@ async function fetchAllArrivals() {
 function fmtMins(ts) {
   const diff = (ts - Date.now()) / 60000;
   const mins = Math.ceil(diff);
-  if (mins <= 0) return { text: 'ARRIVING', html: '<span class="mins arriving">ARRIVING<span class="unit" aria-hidden="true" style="visibility:hidden">minutes</span></span>' };
+  if (mins <= 0) return { text: 'ARRIVING', html: '<span class="mins arriving">ARRIVING</span>' };
   return { text: mins + 'm', html: `<span class="mins">${mins}<span class="unit">${mins===1?'minute':'minutes'}</span></span>` };
 }
 function fmtClock(ts) {
