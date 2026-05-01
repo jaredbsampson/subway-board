@@ -857,8 +857,8 @@ function renderArrivals(slot, arrivals) {
     arrivals = arrivals.filter(a => (a.arrival - offset) >= nowSec);
   }
 
-  const northbound = arrivals.filter(a => a.direction === 'N').slice(0, 6);
-  const southbound = arrivals.filter(a => a.direction === 'S').slice(0, 6);
+  const northbound = arrivals.filter(a => a.direction === 'N').slice(0, 5);
+  const southbound = arrivals.filter(a => a.direction === 'S').slice(0, 5);
 
   targetN.innerHTML = northbound.length
     ? northbound.map(renderRow).join('')
