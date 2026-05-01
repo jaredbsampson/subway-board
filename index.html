@@ -64,9 +64,9 @@
 
   .frame {
     position: relative; z-index: 1;
-    max-width: 1400px;
+    max-width: 1960px;
     margin: 0 auto;
-    padding: clamp(28px, 4vw, 80px) clamp(22px, 3vw, 64px) clamp(40px, 5vw, 80px);
+    padding: clamp(28px, 4vw, 96px) clamp(22px, 3vw, 80px) clamp(40px, 5vw, 96px);
     min-height: 100vh;
     display: flex;
     flex-direction: column;
@@ -115,7 +115,7 @@
     font-family: 'Fraunces', serif;
     font-weight: 700;
     font-variation-settings: "opsz" 144;
-    font-size: clamp(40px, 8vw, 140px);
+    font-size: clamp(40px, 11vw, 200px);
     letter-spacing: -.02em;
     line-height: 1;
     margin: 0;
@@ -152,7 +152,7 @@
 
   /* ---------- STATION BLOCK ---------- */
   .station {
-    margin-top: 36px;
+    margin-top: clamp(36px, 5vw, 84px);
     opacity: 0;
     transform: translateY(8px);
     animation: rise .7s cubic-bezier(.2,.7,.2,1) forwards;
@@ -173,7 +173,7 @@
     font-family: 'Fraunces', serif;
     font-weight: 500;
     font-variation-settings: "opsz" 144;
-    font-size: clamp(26px, 5.5vw, 88px);
+    font-size: clamp(26px, 7.7vw, 124px);
     letter-spacing: -.015em;
     line-height: 1.05;
     margin: 0;
@@ -234,10 +234,10 @@
   /* ---------- ARRIVAL ROWS ---------- */
   .row {
     display: grid;
-    grid-template-columns: clamp(40px, 5vw, 72px) 1fr auto;
+    grid-template-columns: clamp(40px, 7vw, 100px) 1fr auto;
     align-items: center;
-    gap: clamp(12px, 1.4vw, 20px);
-    padding: clamp(14px, 1.6vw, 26px) clamp(12px, 1.4vw, 20px);
+    gap: clamp(12px, 2vw, 32px);
+    padding: clamp(14px, 3.5vw, 60px) clamp(12px, 1.8vw, 28px);
     border-bottom: 1px solid var(--rule);
     transition: background .2s ease;
   }
@@ -247,14 +247,14 @@
   .row.boarding .bullet { box-shadow: 0 0 0 3px rgba(176,58,46,.18); }
 
   .bullet {
-    width: clamp(36px, 4.5vw, 64px);
-    height: clamp(36px, 4.5vw, 64px);
+    width: clamp(36px, 6.3vw, 92px);
+    height: clamp(36px, 6.3vw, 92px);
     border-radius: 50%;
     display: grid; place-items: center;
     color: #fff;
     font-family: 'Fraunces', serif;
     font-weight: 700;
-    font-size: clamp(18px, 2.4vw, 32px);
+    font-size: clamp(18px, 3.4vw, 46px);
     font-style: normal;
     letter-spacing: -.02em;
     flex-shrink: 0;
@@ -304,7 +304,7 @@
   .borough {
     font-family: 'Fraunces', serif;
     font-weight: 500;
-    font-size: clamp(15px, 2.6vw, 36px);
+    font-size: clamp(15px, 3.6vw, 50px);
     letter-spacing: -.01em;
     line-height: 1.15;
     white-space: nowrap;
@@ -325,7 +325,7 @@
   .mins {
     font-family: 'JetBrains Mono', monospace;
     font-weight: 500;
-    font-size: clamp(22px, 4vw, 60px);
+    font-size: clamp(22px, 5.6vw, 84px);
     letter-spacing: -.02em;
     text-align: right;
     line-height: 1;
@@ -415,8 +415,8 @@
 
   /* QR code in the masthead's right column — no frame, blends with the paper */
   .qr-link {
-    width: clamp(56px, 6vw, 96px);
-    height: clamp(56px, 6vw, 96px);
+    width: clamp(56px, 8.5vw, 140px);
+    height: clamp(56px, 8.5vw, 140px);
     display: grid;
     place-items: center;
     text-decoration: none;
@@ -856,8 +856,8 @@ function renderArrivals(slot, arrivals) {
     arrivals = arrivals.filter(a => (a.arrival - offset) >= nowSec);
   }
 
-  const northbound = arrivals.filter(a => a.direction === 'N').slice(0, 4);
-  const southbound = arrivals.filter(a => a.direction === 'S').slice(0, 4);
+  const northbound = arrivals.filter(a => a.direction === 'N').slice(0, 6);
+  const southbound = arrivals.filter(a => a.direction === 'S').slice(0, 6);
 
   targetN.innerHTML = northbound.length
     ? northbound.map(renderRow).join('')
