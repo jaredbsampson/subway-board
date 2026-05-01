@@ -392,10 +392,12 @@
     font-family: 'Fraunces', serif;
     font-weight: 500;
   }
-  /* "ARRIVING" — same size/weight as the mins number, accent red, mono caps */
+  /* "ARRIVING" — accent red, mono caps, 40% smaller than the mins number
+     because the 8-char word is bulky next to a 1–2 digit number */
   .mins.arriving {
     color: var(--accent);
     text-transform: uppercase;
+    font-size: clamp(13px, 4.8vw, 72px);
   }
 
   /* Late-mode indicator next to the LIVE label in the masthead */
