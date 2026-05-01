@@ -85,7 +85,7 @@
   }
   .masthead .left, .masthead .right {
     font-family: 'JetBrains Mono', ui-monospace, monospace;
-    font-size: 11px;
+    font-size: clamp(11px, 3vw, 33px);
     letter-spacing: .14em;
     text-transform: uppercase;
     color: var(--ink-soft);
@@ -106,7 +106,7 @@
     gap: 8px;
   }
   .updated-line {
-    font-size: 9px;
+    font-size: clamp(9px, 2.5vw, 27px);
     letter-spacing: .2em;
     color: var(--ink-faint);
     margin-top: 4px;
@@ -142,7 +142,7 @@
     display: flex;
     justify-content: space-between;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
+    font-size: clamp(10px, 2.8vw, 30px);
     letter-spacing: .2em;
     text-transform: uppercase;
     color: var(--ink-faint);
@@ -180,7 +180,7 @@
   }
   .station-meta {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
+    font-size: clamp(10px, 2.8vw, 30px);
     letter-spacing: .2em;
     text-transform: uppercase;
     color: var(--ink-faint);
@@ -208,7 +208,7 @@
   }
   .direction-header {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
+    font-size: clamp(10px, 2.8vw, 30px);
     letter-spacing: .25em;
     text-transform: uppercase;
     color: var(--ink-soft);
@@ -219,7 +219,7 @@
     align-items: center;
   }
   .direction-header .arrow {
-    font-size: 14px;
+    font-size: clamp(14px, 3.9vw, 42px);
     color: var(--ink-faint);
   }
   /* On narrow viewports (phones), stack the two columns */
@@ -313,7 +313,7 @@
   }
   .terminus {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 9px;
+    font-size: clamp(9px, 2.5vw, 27px);
     letter-spacing: .1em;
     text-transform: uppercase;
     color: var(--ink-faint);
@@ -335,7 +335,7 @@
   }
   .mins .unit {
     display: block;
-    font-size: 8px;
+    font-size: clamp(8px, 2.2vw, 24px);
     letter-spacing: .2em;
     color: var(--ink-faint);
     margin-top: 4px;
@@ -357,7 +357,7 @@
   /* Late-mode indicator next to the LIVE label in the masthead */
   .late-indicator {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
+    font-size: clamp(11px, 3vw, 33px);
     letter-spacing: .14em;
     text-transform: uppercase;
     margin-left: 4px;
@@ -369,7 +369,7 @@
     padding: 24px 4px;
     color: var(--ink-faint);
     font-style: italic;
-    font-size: 14px;
+    font-size: clamp(14px, 3.9vw, 42px);
     text-align: center;
     border-bottom: 1px solid var(--rule);
   }
@@ -384,7 +384,7 @@
     align-items: center;
     gap: 16px;
     font-family: 'JetBrains Mono', monospace;
-    font-size: clamp(10px, 1.1vw, 14px);
+    font-size: clamp(10px, 3vw, 42px);
     letter-spacing: .2em;
     text-transform: uppercase;
     color: var(--ink-faint);
@@ -407,7 +407,7 @@
   .display-style {
     font-family: 'Fraunces', serif;
     font-style: italic;
-    font-size: 13px;
+    font-size: clamp(13px, 3.6vw, 39px);
     letter-spacing: 0;
     text-transform: none;
     color: var(--ink-soft);
@@ -415,8 +415,8 @@
 
   /* QR code in the masthead's right column — no frame, blends with the paper */
   .qr-link {
-    width: clamp(56px, 8.5vw, 140px);
-    height: clamp(56px, 8.5vw, 140px);
+    width: clamp(56px, 6.8vw, 112px);
+    height: clamp(56px, 6.8vw, 112px);
     display: grid;
     place-items: center;
     text-decoration: none;
@@ -433,7 +433,7 @@
   }
   .qr-fallback {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
+    font-size: clamp(11px, 3vw, 33px);
     letter-spacing: .15em;
     color: var(--ink-soft);
   }
