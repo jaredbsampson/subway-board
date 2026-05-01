@@ -150,6 +150,35 @@
     border-bottom: 1px solid var(--rule);
   }
 
+  /* Earthquake shake — applied randomly to bullets / rows / station names,
+     and occasionally to the whole frame for a big tremor. */
+  @keyframes shake-small {
+    0%, 100% { transform: translate(0, 0); }
+    10% { transform: translate(-2px, 1px); }
+    20% { transform: translate(3px, -1px); }
+    30% { transform: translate(-1px, 2px); }
+    40% { transform: translate(2px, -2px); }
+    50% { transform: translate(-3px, 1px); }
+    60% { transform: translate(1px, -1px); }
+    70% { transform: translate(-2px, 2px); }
+    80% { transform: translate(2px, 1px); }
+    90% { transform: translate(-1px, -2px); }
+  }
+  @keyframes shake-big {
+    0%, 100% { transform: translate(0, 0); }
+    10% { transform: translate(-7px, 3px); }
+    20% { transform: translate(9px, -3px); }
+    30% { transform: translate(-3px, 6px); }
+    40% { transform: translate(6px, -7px); }
+    50% { transform: translate(-9px, 3px); }
+    60% { transform: translate(3px, -3px); }
+    70% { transform: translate(-6px, 7px); }
+    80% { transform: translate(7px, 3px); }
+    90% { transform: translate(-3px, -6px); }
+  }
+  .shake-small { animation: shake-small .5s ease-in-out; }
+  .shake-big   { animation: shake-big   .85s ease-in-out; }
+
   /* Bold red "OFFLINE" banner — hidden until the worker is unreachable */
   .offline-banner {
     display: none;
@@ -1064,6 +1093,32 @@ pollSettings();
 setInterval(pollSettings, 5_000);
 // Also re-evaluate the schedule every minute (so dimming kicks in on time even if no phone activity)
 setInterval(pollSettings, 60_000);
+
+// ---------- earthquake glitch: shake random parts of the board on a random cadence ----------
+function triggerShake() {
+  const big = Math.random() < 0.12;   // ~1 in 8 quakes is a big one
+  if (big) {
+    const frame = document.querySelector('.frame');
+    if (!frame) return;
+    frame.classList.add('shake-big');
+    setTimeout(() => frame.classList.remove('shake-big'), 900);
+    return;
+  }
+  const candidates = [
+    ...document.querySelectorAll('.row'),
+    ...document.querySelectorAll('.station-name'),
+    ...document.querySelectorAll('.bullet'),
+  ];
+  if (!candidates.length) return;
+  const target = candidates[Math.floor(Math.random() * candidates.length)];
+  target.classList.add('shake-small');
+  setTimeout(() => target.classList.remove('shake-small'), 550);
+}
+function scheduleNextShake() {
+  const delay = 15_000 + Math.random() * 30_000;  // 15–45 seconds
+  setTimeout(() => { triggerShake(); scheduleNextShake(); }, delay);
+}
+scheduleNextShake();
 </script>
 </body>
 </html>
