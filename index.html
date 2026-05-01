@@ -150,6 +150,20 @@
     border-bottom: 1px solid var(--rule);
   }
 
+  /* Bold red "OFFLINE" banner — hidden until the worker is unreachable */
+  .offline-banner {
+    display: none;
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: var(--accent);
+    font-size: clamp(16px, 4vw, 48px);
+    letter-spacing: .3em;
+    text-transform: uppercase;
+    padding-top: 10px;
+  }
+  .offline-banner.show { display: block; }
+
   /* ---------- STATION BLOCK ---------- */
   .station {
     margin-top: clamp(36px, 5vw, 84px);
@@ -623,6 +637,7 @@
     <span>96th Street · Upper West Side</span>
     <a class="settings-link" id="settings-link" href="control.html">Settings</a>
   </div>
+  <div id="offline-banner" class="offline-banner">Offline</div>
 
   <section class="station" id="station-1">
     <div class="station-header">
@@ -874,9 +889,11 @@ function renderArrivals(slot, arrivals) {
 function setStatus(t, warn) {
   const s = document.getElementById('status');
   const f = document.getElementById('footer-status');
+  const banner = document.getElementById('offline-banner');
   s.textContent = t;
   f.textContent = warn ? 'CONNECTION OFFLINE · SHOWING DEMO DATA' : 'MTA REAL-TIME';
   f.classList.toggle('warn', !!warn);
+  if (banner) banner.classList.toggle('show', !!warn);
 }
 let lastRefreshAt = null;
 function updateAgoText() {
