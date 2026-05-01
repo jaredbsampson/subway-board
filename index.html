@@ -405,6 +405,8 @@
     /* inherits the footer's mono caps treatment */
     color: var(--ink-faint);
   }
+  /* Halve the natural word-space between "Style:" and the value */
+  .footer-style { word-spacing: -0.15em; }
   .display-style {
     font-family: 'Fraunces', serif;
     font-style: italic;
@@ -663,7 +665,7 @@
   <footer class="footer">
     <span id="clock">—:—</span>
     <span class="footer-center" id="footer-status">A LIVING SCHEDULE · MTA REAL-TIME</span>
-    <span><span class="style-prefix">Style:</span> <span class="display-style">Broadsheet</span></span>
+    <span class="footer-style"><span class="style-prefix">Style:</span> <span class="display-style">Broadsheet</span></span>
   </footer>
 </div>
 
@@ -873,7 +875,7 @@ function setStatus(t, warn) {
   const s = document.getElementById('status');
   const f = document.getElementById('footer-status');
   s.textContent = t;
-  f.textContent = warn ? 'CONNECTION OFFLINE · SHOWING DEMO DATA' : 'A LIVING SCHEDULE · MTA REAL-TIME';
+  f.textContent = warn ? 'CONNECTION OFFLINE · SHOWING DEMO DATA' : 'MTA REAL-TIME';
   f.classList.toggle('warn', !!warn);
 }
 let lastRefreshAt = null;
