@@ -64,9 +64,12 @@
 
   .frame {
     position: relative; z-index: 1;
-    max-width: 920px;
+    max-width: 1400px;
     margin: 0 auto;
-    padding: 56px 40px 80px;
+    padding: clamp(28px, 4vw, 80px) clamp(22px, 3vw, 64px) clamp(40px, 5vw, 80px);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
   }
   @media (max-width: 600px) { .frame { padding: 28px 22px 60px; } }
 
@@ -112,7 +115,7 @@
     font-family: 'Fraunces', serif;
     font-weight: 700;
     font-variation-settings: "opsz" 144;
-    font-size: clamp(40px, 7vw, 68px);
+    font-size: clamp(40px, 8vw, 140px);
     letter-spacing: -.02em;
     line-height: 1;
     margin: 0;
@@ -170,7 +173,7 @@
     font-family: 'Fraunces', serif;
     font-weight: 500;
     font-variation-settings: "opsz" 144;
-    font-size: clamp(26px, 4.5vw, 38px);
+    font-size: clamp(26px, 5.5vw, 88px);
     letter-spacing: -.015em;
     line-height: 1.05;
     margin: 0;
@@ -231,10 +234,10 @@
   /* ---------- ARRIVAL ROWS ---------- */
   .row {
     display: grid;
-    grid-template-columns: 40px 1fr auto;
+    grid-template-columns: clamp(40px, 5vw, 72px) 1fr auto;
     align-items: center;
-    gap: 12px;
-    padding: 14px 12px;
+    gap: clamp(12px, 1.4vw, 20px);
+    padding: clamp(14px, 1.6vw, 26px) clamp(12px, 1.4vw, 20px);
     border-bottom: 1px solid var(--rule);
     transition: background .2s ease;
   }
@@ -244,13 +247,14 @@
   .row.boarding .bullet { box-shadow: 0 0 0 3px rgba(176,58,46,.18); }
 
   .bullet {
-    width: 36px; height: 36px;
+    width: clamp(36px, 4.5vw, 64px);
+    height: clamp(36px, 4.5vw, 64px);
     border-radius: 50%;
     display: grid; place-items: center;
     color: #fff;
     font-family: 'Fraunces', serif;
     font-weight: 700;
-    font-size: 18px;
+    font-size: clamp(18px, 2.4vw, 32px);
     font-style: normal;
     letter-spacing: -.02em;
     flex-shrink: 0;
@@ -300,7 +304,7 @@
   .borough {
     font-family: 'Fraunces', serif;
     font-weight: 500;
-    font-size: clamp(15px, 2.2vw, 19px);
+    font-size: clamp(15px, 2.6vw, 36px);
     letter-spacing: -.01em;
     line-height: 1.15;
     white-space: nowrap;
@@ -321,7 +325,7 @@
   .mins {
     font-family: 'JetBrains Mono', monospace;
     font-weight: 500;
-    font-size: clamp(22px, 3.4vw, 28px);
+    font-size: clamp(22px, 4vw, 60px);
     letter-spacing: -.02em;
     text-align: right;
     line-height: 1;
@@ -372,15 +376,15 @@
 
   /* ---------- FOOTER + CONTROLS ---------- */
   .footer {
-    margin-top: 40px;
-    padding-top: 20px;
+    margin-top: auto;
+    padding-top: clamp(20px, 2vw, 36px);
     border-top: 2px solid var(--ink);
     display: grid;
     grid-template-columns: auto 1fr auto;
     align-items: center;
     gap: 16px;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
+    font-size: clamp(10px, 1.1vw, 14px);
     letter-spacing: .2em;
     text-transform: uppercase;
     color: var(--ink-faint);
@@ -411,8 +415,8 @@
 
   /* QR code in the masthead's right column — no frame, blends with the paper */
   .qr-link {
-    width: 56px;
-    height: 56px;
+    width: clamp(56px, 6vw, 96px);
+    height: clamp(56px, 6vw, 96px);
     display: grid;
     place-items: center;
     text-decoration: none;
