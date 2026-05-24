@@ -927,23 +927,16 @@
     filter: drop-shadow(0 0 12px rgba(255,255,255,.25));
   }
   .spooky-ghost svg { width: 100%; height: 100%; display: block; }
-  @keyframes ghost-drift-ltr {
-    0%   { transform: translateX(0) translateY(0); opacity: 0; }
+  /* Single universal keyframe — direction comes from --tx/--ty,
+     dog ghosts flip horizontally via --flip when moving leftward */
+  @keyframes ghost-drift {
+    0%   { transform: translate(0, 0) scaleX(var(--flip, 1)); opacity: 0; }
     5%   { opacity: .42; }
-    25%  { transform: translateX(25vw) translateY(-22px); }
-    50%  { transform: translateX(55vw) translateY(8px); opacity: .48; }
-    75%  { transform: translateX(80vw) translateY(-18px); }
+    25%  { transform: translate(calc(var(--tx) * .25), calc(var(--ty) * .25 - 18px)) scaleX(var(--flip, 1)); }
+    50%  { transform: translate(calc(var(--tx) * .5),  calc(var(--ty) * .5  + 10px)) scaleX(var(--flip, 1)); opacity: .48; }
+    75%  { transform: translate(calc(var(--tx) * .75), calc(var(--ty) * .75 - 14px)) scaleX(var(--flip, 1)); }
     95%  { opacity: .35; }
-    100% { transform: translateX(calc(100vw + 240px)) translateY(0); opacity: 0; }
-  }
-  @keyframes ghost-drift-rtl {
-    0%   { transform: translateX(0) translateY(0); opacity: 0; }
-    5%   { opacity: .42; }
-    25%  { transform: translateX(-25vw) translateY(-22px); }
-    50%  { transform: translateX(-55vw) translateY(8px); opacity: .48; }
-    75%  { transform: translateX(-80vw) translateY(-18px); }
-    95%  { opacity: .35; }
-    100% { transform: translateX(calc(-100vw - 240px)) translateY(0); opacity: 0; }
+    100% { transform: translate(var(--tx), var(--ty)) scaleX(var(--flip, 1)); opacity: 0; }
   }
 
   @keyframes spooky-flicker {
@@ -1806,33 +1799,93 @@ function clearParticleContainers() {
   });
 }
 
-// --- Spooky: semi-opaque ghosts drifting across the viewport ---
-const GHOST_SVG = '<svg viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">'
-  + '<path d="M50 4 C24 4, 10 22, 10 56 L10 100 Q10 116 20 110 Q30 116 40 110 Q50 116 60 110 Q70 116 80 110 Q90 116 90 100 L90 56 C90 22, 76 4, 50 4 Z" fill="#ffffff"/>'
+// --- Spooky: semi-opaque ghosts drifting at varied angles ---
+// Regular ghost — pronounced wispy tail/fronds at the bottom
+const GHOST_SVG = '<svg viewBox="0 0 100 145" xmlns="http://www.w3.org/2000/svg">'
+  + '<path d="M50 4 C24 4, 10 22, 10 56 L10 96 '
+  +   'Q10 118 16 110 '
+  +   'Q22 140 28 108 '
+  +   'Q34 142 40 108 '
+  +   'Q46 142 50 108 '
+  +   'Q54 142 60 108 '
+  +   'Q66 142 72 108 '
+  +   'Q78 140 84 110 '
+  +   'Q90 118 90 96 '
+  +   'L90 56 C90 22, 76 4, 50 4 Z" fill="#ffffff"/>'
   + '<ellipse cx="38" cy="52" rx="4.5" ry="6.5" fill="#0D0D0D"/>'
   + '<ellipse cx="62" cy="52" rx="4.5" ry="6.5" fill="#0D0D0D"/>'
   + '<ellipse cx="50" cy="72" rx="4" ry="6" fill="#0D0D0D"/>'
   + '</svg>';
+// Dog ghost — side-view silhouette, faces right by default. JS sets
+// --flip: -1 when moving leftward so the snout always leads the body.
+const DOG_GHOST_SVG = '<svg viewBox="0 0 160 110" xmlns="http://www.w3.org/2000/svg">'
+  + '<path d="'
+  +   'M28 38 C28 22 42 18 56 18 '
+  +   'L100 18 C112 18 124 22 128 30 '
+  +   'C140 28 152 34 154 46 '
+  +   'C154 56 144 60 138 56 '
+  +   'L138 66 Q148 68 152 78 '
+  +   'L152 90 Q152 102 145 96 '
+  +   'Q140 104 136 92 L136 80 '
+  +   'Q134 76 128 76 L82 76 '
+  +   'Q76 76 76 82 L76 92 '
+  +   'Q76 104 69 96 Q64 104 60 92 '
+  +   'L60 80 Q56 76 48 78 '
+  +   'L34 80 Q24 78 20 68 '
+  +   'L18 56 Q14 46 22 44 '
+  +   'Q30 46 30 58 L30 38 Z'
+  +   '" fill="#ffffff"/>'
+  + '<path d="M118 22 Q124 42 116 50 Q104 48 108 26 Z" fill="#ffffff" opacity=".92"/>'
+  + '<circle cx="135" cy="34" r="2.4" fill="#0D0D0D"/>'
+  + '<circle cx="151" cy="44" r="2"   fill="#0D0D0D"/>'
+  + '</svg>';
+
 function spawnGhost() {
   const container = document.getElementById('spooky-ghosts');
   if (!container) return;
   const ghost = document.createElement('div');
   ghost.className = 'spooky-ghost';
-  const size = 110 + Math.random() * 110;          // 110–220px wide
-  const startY = 4 + Math.random() * 78;           // 4–82% vertical
-  const fromRight = Math.random() < 0.5;
-  const duration = 22 + Math.random() * 18;        // 22–40s to cross
-  ghost.style.top = startY + '%';
-  ghost.style.width = size + 'px';
-  ghost.style.height = (size * 1.18) + 'px';
-  if (fromRight) {
-    ghost.style.right = '-' + (size + 60) + 'px';
-    ghost.style.animation = `ghost-drift-rtl ${duration}s linear forwards`;
-  } else {
-    ghost.style.left = '-' + (size + 60) + 'px';
-    ghost.style.animation = `ghost-drift-ltr ${duration}s linear forwards`;
-  }
-  ghost.innerHTML = GHOST_SVG;
+
+  // ~15% chance of dog ghost
+  const isDog = Math.random() < 0.15;
+  const baseSize = 110 + Math.random() * 110;          // 110–220px base
+  const w = isDog ? baseSize * 1.4 : baseSize;
+  const h = isDog ? baseSize * 0.96 : baseSize * 1.18;
+
+  // Random trajectory angle. Right-going: -55°..+55°. Left-going:
+  // 125°..235°. Excludes pure vertical to keep motion reading naturally.
+  const goesRight = Math.random() < 0.5;
+  const angleDeg = goesRight
+    ? -55 + Math.random() * 110
+    : 125 + Math.random() * 110;
+  const a = angleDeg * Math.PI / 180;
+  const dx = Math.cos(a);
+  const dy = Math.sin(a);
+
+  // Travel far enough that the ghost starts and ends well off-screen.
+  const travelDist = Math.max(window.innerWidth, window.innerHeight) * 1.4
+    + Math.max(w, h) + 200;
+  const tx = dx * travelDist;
+  const ty = dy * travelDist;
+
+  // Start centered, then back off by half the trajectory so the ghost
+  // enters from off-screen on one side and exits on the other.
+  const startX = (window.innerWidth  / 2) - (w / 2) - (tx / 2);
+  const startY = (window.innerHeight / 2) - (h / 2) - (ty / 2);
+
+  ghost.style.left = startX + 'px';
+  ghost.style.top  = startY + 'px';
+  ghost.style.width  = w + 'px';
+  ghost.style.height = h + 'px';
+  ghost.style.setProperty('--tx', tx + 'px');
+  ghost.style.setProperty('--ty', ty + 'px');
+  // Mirror the dog when it's heading left so it faces the direction of travel
+  if (isDog && !goesRight) ghost.style.setProperty('--flip', '-1');
+
+  const duration = 22 + Math.random() * 18;            // 22–40s
+  ghost.style.animation = `ghost-drift ${duration}s linear forwards`;
+
+  ghost.innerHTML = isDog ? DOG_GHOST_SVG : GHOST_SVG;
   container.appendChild(ghost);
   setTimeout(() => ghost.remove(), duration * 1000 + 500);
 }
