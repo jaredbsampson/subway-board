@@ -911,34 +911,39 @@
   body[data-mode="spooky"] .spooky-fog {
     animation: spooky-fog-drift 24s ease-in-out infinite;
   }
-  /* Ghosts — semi-opaque silhouettes drifting across the viewport */
+  /* Ghosts — semi-opaque silhouettes floating across the viewport,
+     above the frame so they're guaranteed visible against the dense data */
   body[data-mode="spooky"] .spooky-ghosts {
     display: block;
-    position: absolute; inset: 0;
+    position: fixed; inset: 0;
+    z-index: 3;
+    pointer-events: none;
+    overflow: hidden;
   }
   .spooky-ghost {
     position: absolute;
     pointer-events: none;
     will-change: transform, opacity;
+    filter: drop-shadow(0 0 12px rgba(255,255,255,.25));
   }
   .spooky-ghost svg { width: 100%; height: 100%; display: block; }
   @keyframes ghost-drift-ltr {
     0%   { transform: translateX(0) translateY(0); opacity: 0; }
-    8%   { opacity: .28; }
-    25%  { transform: translateX(25vw) translateY(-18px); }
-    50%  { transform: translateX(55vw) translateY(6px); opacity: .32; }
-    75%  { transform: translateX(80vw) translateY(-14px); }
-    92%  { opacity: .22; }
-    100% { transform: translateX(calc(100vw + 220px)) translateY(0); opacity: 0; }
+    5%   { opacity: .42; }
+    25%  { transform: translateX(25vw) translateY(-22px); }
+    50%  { transform: translateX(55vw) translateY(8px); opacity: .48; }
+    75%  { transform: translateX(80vw) translateY(-18px); }
+    95%  { opacity: .35; }
+    100% { transform: translateX(calc(100vw + 240px)) translateY(0); opacity: 0; }
   }
   @keyframes ghost-drift-rtl {
     0%   { transform: translateX(0) translateY(0); opacity: 0; }
-    8%   { opacity: .28; }
-    25%  { transform: translateX(-25vw) translateY(-18px); }
-    50%  { transform: translateX(-55vw) translateY(6px); opacity: .32; }
-    75%  { transform: translateX(-80vw) translateY(-14px); }
-    92%  { opacity: .22; }
-    100% { transform: translateX(calc(-100vw - 220px)) translateY(0); opacity: 0; }
+    5%   { opacity: .42; }
+    25%  { transform: translateX(-25vw) translateY(-22px); }
+    50%  { transform: translateX(-55vw) translateY(8px); opacity: .48; }
+    75%  { transform: translateX(-80vw) translateY(-18px); }
+    95%  { opacity: .35; }
+    100% { transform: translateX(calc(-100vw - 240px)) translateY(0); opacity: 0; }
   }
 
   @keyframes spooky-flicker {
@@ -1008,11 +1013,11 @@
   }
   .snowflake {
     position: absolute;
-    top: -20px;
-    background: #ffffff;
+    top: -120px;
+    background: radial-gradient(circle at 35% 35%, #ffffff 0%, #ffffff 40%, rgba(255,255,255,.6) 70%, rgba(255,255,255,.15) 100%);
     border-radius: 50%;
     pointer-events: none;
-    box-shadow: 0 0 6px rgba(255,255,255,.7);
+    box-shadow: 0 0 18px rgba(255,255,255,.45);
     animation: snow-fall linear forwards;
   }
   @keyframes snow-fall {
@@ -1813,18 +1818,18 @@ function spawnGhost() {
   if (!container) return;
   const ghost = document.createElement('div');
   ghost.className = 'spooky-ghost';
-  const size = 70 + Math.random() * 80;            // 70–150px wide
+  const size = 110 + Math.random() * 110;          // 110–220px wide
   const startY = 4 + Math.random() * 78;           // 4–82% vertical
   const fromRight = Math.random() < 0.5;
-  const duration = 28 + Math.random() * 20;        // 28–48s to cross
+  const duration = 22 + Math.random() * 18;        // 22–40s to cross
   ghost.style.top = startY + '%';
   ghost.style.width = size + 'px';
   ghost.style.height = (size * 1.18) + 'px';
   if (fromRight) {
-    ghost.style.right = '-' + (size + 40) + 'px';
+    ghost.style.right = '-' + (size + 60) + 'px';
     ghost.style.animation = `ghost-drift-rtl ${duration}s linear forwards`;
   } else {
-    ghost.style.left = '-' + (size + 40) + 'px';
+    ghost.style.left = '-' + (size + 60) + 'px';
     ghost.style.animation = `ghost-drift-ltr ${duration}s linear forwards`;
   }
   ghost.innerHTML = GHOST_SVG;
@@ -1832,12 +1837,12 @@ function spawnGhost() {
   setTimeout(() => ghost.remove(), duration * 1000 + 500);
 }
 function startGhosts() {
-  // Spawn 3 right away, staggered, then keep one drifting in every ~6s
-  for (let i = 0; i < 3; i++) {
-    const t = setTimeout(spawnGhost, i * 5000);
+  // 4 ghosts queued at 0/3/6/9s, then one every ~4s after
+  for (let i = 0; i < 4; i++) {
+    const t = setTimeout(spawnGhost, i * 3000);
     modeTimers.push(t);
   }
-  const interval = setInterval(spawnGhost, 6000);
+  const interval = setInterval(spawnGhost, 4000);
   modeTimers.push(interval);
 }
 
@@ -1905,31 +1910,31 @@ function scheduleFireworks() {
   modeTimers.push(t);
 }
 
-// --- Christmas: gentle snowfall ---
+// --- Christmas: snowfall (chunky flakes) ---
 function spawnSnowflake() {
   const container = document.getElementById('christmas-snow');
   if (!container) return;
   const flake = document.createElement('div');
   flake.className = 'snowflake';
-  const size = 4 + Math.random() * 8;                // 4–12px circles
+  const size = 40 + Math.random() * 80;              // 40–120px circles (10× previous)
   flake.style.left = (Math.random() * 100) + '%';
   flake.style.width = size + 'px';
   flake.style.height = size + 'px';
-  flake.style.opacity = (0.55 + Math.random() * 0.4).toFixed(2);
-  const duration = 6 + Math.random() * 7;            // 6–13s slow drift
+  flake.style.opacity = (0.5 + Math.random() * 0.35).toFixed(2);
+  const duration = 10 + Math.random() * 10;          // 10–20s slow drift (heavier flakes feel less rushed)
   flake.style.animationDuration = duration + 's';
-  const drift = (Math.random() * 140 - 70).toFixed(0) + 'px';
+  const drift = (Math.random() * 200 - 100).toFixed(0) + 'px';
   flake.style.setProperty('--drift', drift);
   container.appendChild(flake);
   setTimeout(() => flake.remove(), duration * 1000 + 200);
 }
 function startSnow() {
-  // Pre-seed a handful staggered, then spawn one every ~600ms
-  for (let i = 0; i < 14; i++) {
-    const t = setTimeout(spawnSnowflake, i * 500);
+  // Fewer, larger flakes — pre-seed 8, then spawn one every ~1.2s
+  for (let i = 0; i < 8; i++) {
+    const t = setTimeout(spawnSnowflake, i * 900);
     modeTimers.push(t);
   }
-  const interval = setInterval(spawnSnowflake, 600);
+  const interval = setInterval(spawnSnowflake, 1200);
   modeTimers.push(interval);
 }
 
@@ -1942,8 +1947,8 @@ function spawnConfettiPiece() {
   c.className = 'confetti';
   const shape = Math.floor(Math.random() * 3);
   const color = CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)];
-  const w = 18 + Math.random() * 18;   // 18–36px (3× previous)
-  const h = 24 + Math.random() * 24;   // 24–48px (3× previous)
+  const w = 90 + Math.random() * 90;    // 90–180px (5× previous 18–36)
+  const h = 120 + Math.random() * 120;  // 120–240px (5× previous 24–48)
   c.style.left = (Math.random() * 100) + '%';
   c.style.background = color;
   c.style.width = w + 'px';
@@ -1957,19 +1962,19 @@ function spawnConfettiPiece() {
     c.style.borderRight = (w/2) + 'px solid transparent';
     c.style.borderBottom = h + 'px solid ' + color;
   } // else: rectangle
-  const duration = 6 + Math.random() * 6;
+  const duration = 10 + Math.random() * 8;          // 10–18s (giant pieces fall slower)
   c.style.animationDuration = duration + 's';
-  c.style.setProperty('--drift', (Math.random() * 200 - 100).toFixed(0) + 'px');
+  c.style.setProperty('--drift', (Math.random() * 300 - 150).toFixed(0) + 'px');
   c.style.setProperty('--spin', (360 + Math.random() * 720).toFixed(0) + 'deg');
   container.appendChild(c);
   setTimeout(() => c.remove(), duration * 1000 + 200);
 }
 function startConfetti() {
-  for (let i = 0; i < 6; i++) {
-    const t = setTimeout(spawnConfettiPiece, i * 700);
+  for (let i = 0; i < 5; i++) {
+    const t = setTimeout(spawnConfettiPiece, i * 1300);
     modeTimers.push(t);
   }
-  const interval = setInterval(spawnConfettiPiece, 1000);
+  const interval = setInterval(spawnConfettiPiece, 1600);
   modeTimers.push(interval);
 }
 
@@ -2028,10 +2033,10 @@ function applyMode(rawMode) {
   } else if (mode === 'birthday') {
     if (!REDUCED_MOTION) startConfetti();
   } else if (mode === 'spooky') {
-    if (!REDUCED_MOTION) {
-      startSpookyFlicker();
-      startGhosts();
-    }
+    // Ghosts always run — they drift slowly enough to be safe even with
+    // prefers-reduced-motion. Flicker stays gated on motion preference.
+    startGhosts();
+    if (!REDUCED_MOTION) startSpookyFlicker();
   }
 
   // QR colors may depend on the mode background
