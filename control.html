@@ -196,6 +196,104 @@
     box-shadow: inset 0 -3px 0 var(--accent);
   }
 
+  /* mode grid — six themed-skin buttons (Default, America, Spooky,
+     Christmas, Birthday, Sexy). The Sexy button supports press-and-hold
+     to reveal hidden Date Night mode. */
+  .mode-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .mode-btn {
+    position: relative;
+    padding: 12px 4px 10px;
+    border: 1px solid var(--rule);
+    background: var(--bg-2);
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 500;
+    font-size: 13px;
+    color: var(--ink-soft);
+    text-align: center;
+    transition: all .15s;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+  }
+  .mode-btn.active {
+    border-color: var(--ink);
+    color: var(--ink);
+    background: var(--bg);
+    box-shadow: inset 0 -3px 0 var(--accent);
+  }
+  .mode-swatch {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    margin-bottom: 6px;
+    position: relative;
+    z-index: 2;
+  }
+  .mode-swatch span {
+    display: inline-block;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    border: 1px solid rgba(0,0,0,.12);
+    box-shadow: 0 1px 2px rgba(0,0,0,.05);
+  }
+  .mode-label {
+    position: relative;
+    z-index: 2;
+  }
+  .mode-btn .hold-fill {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, #FF1493 0%, #8B0000 100%);
+    opacity: 0;
+    pointer-events: none;
+    transform-origin: left center;
+    transform: scaleX(0);
+    z-index: 1;
+  }
+  .mode-btn.holding .hold-fill {
+    opacity: .35;
+    transition: transform 2s linear;
+    transform: scaleX(1);
+  }
+  .mode-btn .hold-text {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-style: normal;
+    font-size: 8px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-top: 4px;
+    height: 10px;
+    opacity: 0;
+    transition: opacity .2s;
+    position: relative;
+    z-index: 2;
+  }
+  .mode-btn.holding .hold-text { opacity: 1; }
+  .mode-current {
+    margin-top: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    text-align: center;
+  }
+  .mode-current strong {
+    color: var(--ink);
+    font-weight: 700;
+    letter-spacing: .14em;
+  }
+
   /* late-mode (3-button group) */
   .late-row {
     display: grid;
@@ -432,6 +530,63 @@
   </section>
 
   <section>
+    <h2>Mode</h2>
+    <div class="mode-grid">
+      <button class="mode-btn" data-mode="default">
+        <div class="mode-swatch">
+          <span style="background:#f1ead8"></span>
+          <span style="background:#11212f"></span>
+          <span style="background:#b03a2e"></span>
+        </div>
+        <span class="mode-label">Default</span>
+      </button>
+      <button class="mode-btn" data-mode="america">
+        <div class="mode-swatch">
+          <span style="background:#0A1A3F"></span>
+          <span style="background:#ffffff"></span>
+          <span style="background:#C8102E"></span>
+        </div>
+        <span class="mode-label">America</span>
+      </button>
+      <button class="mode-btn" data-mode="spooky">
+        <div class="mode-swatch">
+          <span style="background:#0D0D0D"></span>
+          <span style="background:#D2691E"></span>
+          <span style="background:#3D1E5C"></span>
+        </div>
+        <span class="mode-label">Spooky</span>
+      </button>
+      <button class="mode-btn" data-mode="christmas">
+        <div class="mode-swatch">
+          <span style="background:#0F3D2E"></span>
+          <span style="background:#A8201A"></span>
+          <span style="background:#C9A227"></span>
+        </div>
+        <span class="mode-label">Christmas</span>
+      </button>
+      <button class="mode-btn" data-mode="birthday">
+        <div class="mode-swatch">
+          <span style="background:#FCE7E7"></span>
+          <span style="background:#A4234A"></span>
+          <span style="background:#D4AF37"></span>
+        </div>
+        <span class="mode-label">Birthday</span>
+      </button>
+      <button class="mode-btn" data-mode="sexy" id="sexy-btn">
+        <span class="hold-fill"></span>
+        <div class="mode-swatch">
+          <span style="background:#FF1493"></span>
+          <span style="background:#8B0000"></span>
+          <span style="background:#3D0C11"></span>
+        </div>
+        <span class="mode-label">Sexy</span>
+        <span class="hold-text">Hold to unlock…</span>
+      </button>
+    </div>
+    <div class="mode-current">Active: <strong id="mode-current-label">Default</strong></div>
+  </section>
+
+  <section>
     <h2>Running Late Mode</h2>
     <div class="late-row">
       <button data-late="normal" class="active">Normal</button>
@@ -616,7 +771,18 @@ let state = {
   brightness: 100,
   theme: 'paper',
   lateMode: 'normal',
+  mode: 'default',
   schedule: { enabled: true, dimAt: '22:00', dimTo: 30, brightAt: '07:00', brightTo: 100 },
+};
+
+const MODE_LABELS = {
+  'default':    'Default',
+  'america':    'America',
+  'spooky':     'Spooky',
+  'christmas':  'Christmas',
+  'birthday':   'Birthday',
+  'sexy':       'Sexy',
+  'date-night': 'Date Night ✦',
 };
 
 const $ = id => document.getElementById(id);
@@ -642,10 +808,23 @@ function applyToUI() {
   document.querySelectorAll('[data-late]').forEach(b => {
     b.classList.toggle('active', b.dataset.late === (state.lateMode || 'normal'));
   });
+  applyModeUI();
   $('sched-on').classList.toggle('on', state.schedule.enabled);
   $('dim-at').value = state.schedule.dimAt;
   $('bright-at').value = state.schedule.brightAt;
   $('dim-to-label').textContent = state.schedule.dimTo + '%';
+}
+
+function applyModeUI() {
+  const m = state.mode || 'default';
+  document.querySelectorAll('.mode-btn').forEach(b => {
+    let active = b.dataset.mode === m;
+    // Date Night lights up the Sexy button since that's where it's hidden
+    if (b.dataset.mode === 'sexy' && m === 'date-night') active = true;
+    b.classList.toggle('active', active);
+  });
+  const label = $('mode-current-label');
+  if (label) label.textContent = MODE_LABELS[m] || 'Default';
 }
 
 async function load() {
@@ -706,6 +885,44 @@ document.querySelectorAll('[data-theme]').forEach(b => {
 // late-mode buttons
 document.querySelectorAll('[data-late]').forEach(b => {
   b.addEventListener('click', () => save({ lateMode: b.dataset.late }));
+});
+
+// mode buttons — short tap on Sexy = gag, hold 2s = Date Night
+const SEXY_HOLD_MS = 2000;
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  const mode = btn.dataset.mode;
+  if (mode === 'sexy') {
+    let holdTimer = null;
+    let firedLong = false;
+
+    const cancelHold = () => {
+      if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+      btn.classList.remove('holding');
+    };
+
+    btn.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      firedLong = false;
+      btn.classList.add('holding');
+      holdTimer = setTimeout(() => {
+        firedLong = true;
+        cancelHold();
+        save({ mode: 'date-night' });
+        if (navigator.vibrate) try { navigator.vibrate(40); } catch {}
+      }, SEXY_HOLD_MS);
+    });
+    btn.addEventListener('pointerup', () => {
+      const wasHolding = holdTimer !== null;
+      cancelHold();
+      if (wasHolding && !firedLong) save({ mode: 'sexy' });
+    });
+    btn.addEventListener('pointerleave', cancelHold);
+    btn.addEventListener('pointercancel', cancelHold);
+    // suppress the synthetic click so it doesn't double-fire
+    btn.addEventListener('click', (e) => e.preventDefault());
+  } else {
+    btn.addEventListener('click', () => save({ mode }));
+  }
 });
 
 // schedule
