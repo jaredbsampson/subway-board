@@ -407,18 +407,6 @@
   </div>
 
   <section>
-    <h2>Display</h2>
-    <button id="reload-btn" style="
-      width:100%;padding:18px;
-      background:var(--ink);color:var(--bg);
-      border:none;border-radius:4px;cursor:pointer;
-      font-family:'JetBrains Mono',monospace;font-size:11px;
-      letter-spacing:.2em;text-transform:uppercase;
-      transition:opacity .15s;
-    ">Reload Board</button>
-  </section>
-
-  <section>
     <h2>Brightness</h2>
     <div class="brightness">
       <div class="brightness-row">
@@ -534,6 +522,18 @@
   <footer>
     NO. 1 · VOL. I · BOARD CONTROL
   </footer>
+
+  <button id="reload-btn" style="
+    display:block;margin:24px auto 0;
+    padding:8px 18px;
+    background:transparent;
+    border:1px solid var(--rule);
+    border-radius:3px;cursor:pointer;
+    font-family:'JetBrains Mono',monospace;
+    font-size:9px;letter-spacing:.2em;
+    text-transform:uppercase;color:var(--ink-faint);
+    transition:all .15s;
+  ">Reload Board</button>
 </div>
 
 <div class="saving" id="saving">SAVED</div>
