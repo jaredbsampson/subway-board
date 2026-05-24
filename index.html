@@ -687,6 +687,7 @@
   .spooky-cobweb,
   .spooky-crow,
   .spooky-fog,
+  .spooky-ghosts,
   .christmas-snow,
   .birthday-confetti-static,
   .birthday-confetti-falling,
@@ -910,6 +911,36 @@
   body[data-mode="spooky"] .spooky-fog {
     animation: spooky-fog-drift 24s ease-in-out infinite;
   }
+  /* Ghosts — semi-opaque silhouettes drifting across the viewport */
+  body[data-mode="spooky"] .spooky-ghosts {
+    display: block;
+    position: absolute; inset: 0;
+  }
+  .spooky-ghost {
+    position: absolute;
+    pointer-events: none;
+    will-change: transform, opacity;
+  }
+  .spooky-ghost svg { width: 100%; height: 100%; display: block; }
+  @keyframes ghost-drift-ltr {
+    0%   { transform: translateX(0) translateY(0); opacity: 0; }
+    8%   { opacity: .28; }
+    25%  { transform: translateX(25vw) translateY(-18px); }
+    50%  { transform: translateX(55vw) translateY(6px); opacity: .32; }
+    75%  { transform: translateX(80vw) translateY(-14px); }
+    92%  { opacity: .22; }
+    100% { transform: translateX(calc(100vw + 220px)) translateY(0); opacity: 0; }
+  }
+  @keyframes ghost-drift-rtl {
+    0%   { transform: translateX(0) translateY(0); opacity: 0; }
+    8%   { opacity: .28; }
+    25%  { transform: translateX(-25vw) translateY(-18px); }
+    50%  { transform: translateX(-55vw) translateY(6px); opacity: .32; }
+    75%  { transform: translateX(-80vw) translateY(-14px); }
+    92%  { opacity: .22; }
+    100% { transform: translateX(calc(-100vw - 220px)) translateY(0); opacity: 0; }
+  }
+
   @keyframes spooky-flicker {
     0%, 100% { opacity: 1; }
     30%      { opacity: .55; }
@@ -977,12 +1008,11 @@
   }
   .snowflake {
     position: absolute;
-    top: -16px;
-    color: #fff;
-    font-family: serif;
-    line-height: 1;
-    user-select: none;
+    top: -20px;
+    background: #ffffff;
+    border-radius: 50%;
     pointer-events: none;
+    box-shadow: 0 0 6px rgba(255,255,255,.7);
     animation: snow-fall linear forwards;
   }
   @keyframes snow-fall {
@@ -1249,6 +1279,7 @@
     </g>
   </svg>
   <div class="spooky-fog"></div>
+  <div class="spooky-ghosts" id="spooky-ghosts"></div>
 
   <!-- Christmas -->
   <div class="christmas-snow" id="christmas-snow"></div>
@@ -1752,10 +1783,50 @@ function clearModeTimers() {
 }
 
 function clearParticleContainers() {
-  ['america-fireworks','christmas-snow','birthday-confetti-falling'].forEach(id => {
+  ['america-fireworks','christmas-snow','birthday-confetti-falling','spooky-ghosts'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.innerHTML = '';
   });
+}
+
+// --- Spooky: semi-opaque ghosts drifting across the viewport ---
+const GHOST_SVG = '<svg viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">'
+  + '<path d="M50 4 C24 4, 10 22, 10 56 L10 100 Q10 116 20 110 Q30 116 40 110 Q50 116 60 110 Q70 116 80 110 Q90 116 90 100 L90 56 C90 22, 76 4, 50 4 Z" fill="#ffffff"/>'
+  + '<ellipse cx="38" cy="52" rx="4.5" ry="6.5" fill="#0D0D0D"/>'
+  + '<ellipse cx="62" cy="52" rx="4.5" ry="6.5" fill="#0D0D0D"/>'
+  + '<ellipse cx="50" cy="72" rx="4" ry="6" fill="#0D0D0D"/>'
+  + '</svg>';
+function spawnGhost() {
+  const container = document.getElementById('spooky-ghosts');
+  if (!container) return;
+  const ghost = document.createElement('div');
+  ghost.className = 'spooky-ghost';
+  const size = 70 + Math.random() * 80;            // 70–150px wide
+  const startY = 4 + Math.random() * 78;           // 4–82% vertical
+  const fromRight = Math.random() < 0.5;
+  const duration = 28 + Math.random() * 20;        // 28–48s to cross
+  ghost.style.top = startY + '%';
+  ghost.style.width = size + 'px';
+  ghost.style.height = (size * 1.18) + 'px';
+  if (fromRight) {
+    ghost.style.right = '-' + (size + 40) + 'px';
+    ghost.style.animation = `ghost-drift-rtl ${duration}s linear forwards`;
+  } else {
+    ghost.style.left = '-' + (size + 40) + 'px';
+    ghost.style.animation = `ghost-drift-ltr ${duration}s linear forwards`;
+  }
+  ghost.innerHTML = GHOST_SVG;
+  container.appendChild(ghost);
+  setTimeout(() => ghost.remove(), duration * 1000 + 500);
+}
+function startGhosts() {
+  // Spawn 3 right away, staggered, then keep one drifting in every ~6s
+  for (let i = 0; i < 3; i++) {
+    const t = setTimeout(spawnGhost, i * 5000);
+    modeTimers.push(t);
+  }
+  const interval = setInterval(spawnGhost, 6000);
+  modeTimers.push(interval);
 }
 
 // --- America: starfield (generated once via box-shadow) + periodic fireworks ---
@@ -1828,25 +1899,25 @@ function spawnSnowflake() {
   if (!container) return;
   const flake = document.createElement('div');
   flake.className = 'snowflake';
-  const size = 8 + Math.random() * 14;
+  const size = 4 + Math.random() * 8;                // 4–12px circles
   flake.style.left = (Math.random() * 100) + '%';
-  flake.style.fontSize = size + 'px';
-  flake.style.opacity = (0.35 + Math.random() * 0.5).toFixed(2);
-  const duration = 3 + Math.random() * 5;
+  flake.style.width = size + 'px';
+  flake.style.height = size + 'px';
+  flake.style.opacity = (0.55 + Math.random() * 0.4).toFixed(2);
+  const duration = 6 + Math.random() * 7;            // 6–13s slow drift
   flake.style.animationDuration = duration + 's';
-  const drift = (Math.random() * 120 - 60).toFixed(0) + 'px';
+  const drift = (Math.random() * 140 - 70).toFixed(0) + 'px';
   flake.style.setProperty('--drift', drift);
-  flake.textContent = '·';
   container.appendChild(flake);
   setTimeout(() => flake.remove(), duration * 1000 + 200);
 }
 function startSnow() {
-  // ~20 flakes on screen at varied durations
-  for (let i = 0; i < 12; i++) {
-    const t = setTimeout(spawnSnowflake, i * 600);
+  // Pre-seed a handful staggered, then spawn one every ~600ms
+  for (let i = 0; i < 14; i++) {
+    const t = setTimeout(spawnSnowflake, i * 500);
     modeTimers.push(t);
   }
-  const interval = setInterval(spawnSnowflake, 500);
+  const interval = setInterval(spawnSnowflake, 600);
   modeTimers.push(interval);
 }
 
@@ -1859,8 +1930,8 @@ function spawnConfettiPiece() {
   c.className = 'confetti';
   const shape = Math.floor(Math.random() * 3);
   const color = CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)];
-  const w = 6 + Math.random() * 6;
-  const h = 8 + Math.random() * 8;
+  const w = 18 + Math.random() * 18;   // 18–36px (3× previous)
+  const h = 24 + Math.random() * 24;   // 24–48px (3× previous)
   c.style.left = (Math.random() * 100) + '%';
   c.style.background = color;
   c.style.width = w + 'px';
@@ -1945,7 +2016,10 @@ function applyMode(rawMode) {
   } else if (mode === 'birthday') {
     if (!REDUCED_MOTION) startConfetti();
   } else if (mode === 'spooky') {
-    if (!REDUCED_MOTION) startSpookyFlicker();
+    if (!REDUCED_MOTION) {
+      startSpookyFlicker();
+      startGhosts();
+    }
   }
 
   // QR colors may depend on the mode background
