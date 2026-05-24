@@ -407,6 +407,18 @@
   </div>
 
   <section>
+    <h2>Display</h2>
+    <button id="reload-btn" style="
+      width:100%;padding:18px;
+      background:var(--ink);color:var(--bg);
+      border:none;border-radius:4px;cursor:pointer;
+      font-family:'JetBrains Mono',monospace;font-size:11px;
+      letter-spacing:.2em;text-transform:uppercase;
+      transition:opacity .15s;
+    ">Reload Board</button>
+  </section>
+
+  <section>
     <h2>Brightness</h2>
     <div class="brightness">
       <div class="brightness-row">
@@ -705,6 +717,17 @@ $('dim-at').addEventListener('change', e => {
 });
 $('bright-at').addEventListener('change', e => {
   save({ schedule: { brightAt: e.target.value } });
+});
+
+document.getElementById('reload-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('reload-btn');
+  btn.textContent = 'RELOADING…';
+  btn.style.opacity = '.5';
+  await save({ reloadAt: Date.now() });
+  setTimeout(() => {
+    btn.textContent = 'Reload Board';
+    btn.style.opacity = '';
+  }, 1500);
 });
 
 load();

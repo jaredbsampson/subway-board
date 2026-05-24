@@ -1094,7 +1094,8 @@ function brightnessFromSchedule(schedule, manualBrightness) {
   return inBrightWindow ? manualBrightness : schedule.dimTo;
 }
 
-async function pollSettings() {
+let lastReloadAt = 0;
+async function pollSettingsWithReload() {
   if (!config.apiUrl) return;
   try {
     const r = await fetch(config.apiUrl.replace(/\/+$/, '') + '/brightness', { cache: 'no-store' });
@@ -1107,16 +1108,20 @@ async function pollSettings() {
     if (nextLate !== lateMode) {
       lateMode = nextLate;
       applyLateModeIndicator();
-      refresh();  // re-render arrivals with the new time-shift applied
+      refresh();
     }
+    if (s.reloadAt && lastReloadAt && s.reloadAt !== lastReloadAt) {
+      window.location.reload();
+      return;
+    }
+    lastReloadAt = s.reloadAt || 0;
   } catch {}
 }
 
 // Poll on a short interval so phone changes feel near-instant.
-pollSettings();
-setInterval(pollSettings, 5_000);
-// Also re-evaluate the schedule every minute (so dimming kicks in on time even if no phone activity)
-setInterval(pollSettings, 60_000);
+// Also covers schedule re-evaluation since it runs every 5s.
+pollSettingsWithReload();
+setInterval(pollSettingsWithReload, 5_000);
 
 // ---------- earthquake glitch: shake random parts of the board on a random cadence ----------
 function triggerShake() {
