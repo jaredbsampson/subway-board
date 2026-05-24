@@ -887,37 +887,51 @@ document.querySelectorAll('[data-late]').forEach(b => {
   b.addEventListener('click', () => save({ lateMode: b.dataset.late }));
 });
 
-// mode buttons — short tap on Sexy = gag, hold 2s = Date Night
+// mode buttons — short tap on Sexy = gag, hold 2s (after a 300ms grace) = Date Night.
+// The 300ms grace prevents accidentally triggering the date-night loading animation
+// on quick taps; the visual fill only starts if the user is still pressing past 300ms.
+const SEXY_GRACE_MS = 300;
 const SEXY_HOLD_MS = 2000;
 document.querySelectorAll('.mode-btn').forEach(btn => {
   const mode = btn.dataset.mode;
   if (mode === 'sexy') {
+    let graceTimer = null;
     let holdTimer = null;
     let firedLong = false;
+    let pressed = false;
 
-    const cancelHold = () => {
-      if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+    const cancelAll = () => {
+      if (graceTimer) { clearTimeout(graceTimer); graceTimer = null; }
+      if (holdTimer)  { clearTimeout(holdTimer);  holdTimer  = null; }
       btn.classList.remove('holding');
     };
 
     btn.addEventListener('pointerdown', (e) => {
       e.preventDefault();
       firedLong = false;
-      btn.classList.add('holding');
-      holdTimer = setTimeout(() => {
-        firedLong = true;
-        cancelHold();
-        save({ mode: 'date-night' });
-        if (navigator.vibrate) try { navigator.vibrate(40); } catch {}
-      }, SEXY_HOLD_MS);
+      pressed = true;
+      // 300ms grace before the visual hold animation kicks in
+      graceTimer = setTimeout(() => {
+        graceTimer = null;
+        btn.classList.add('holding');
+        holdTimer = setTimeout(() => {
+          firedLong = true;
+          cancelAll();
+          save({ mode: 'date-night' });
+          if (navigator.vibrate) try { navigator.vibrate(40); } catch {}
+        }, SEXY_HOLD_MS);
+      }, SEXY_GRACE_MS);
     });
     btn.addEventListener('pointerup', () => {
-      const wasHolding = holdTimer !== null;
-      cancelHold();
-      if (wasHolding && !firedLong) save({ mode: 'sexy' });
+      if (!pressed) return;
+      pressed = false;
+      const longFired = firedLong;
+      cancelAll();
+      if (!longFired) save({ mode: 'sexy' });
     });
-    btn.addEventListener('pointerleave', cancelHold);
-    btn.addEventListener('pointercancel', cancelHold);
+    const cancelPress = () => { pressed = false; cancelAll(); };
+    btn.addEventListener('pointerleave', cancelPress);
+    btn.addEventListener('pointercancel', cancelPress);
     // suppress the synthetic click so it doesn't double-fire
     btn.addEventListener('click', (e) => e.preventDefault());
   } else {
