@@ -32,6 +32,19 @@
     --shadow:       0 1px 0 rgba(0,0,0,.4), 0 30px 60px -30px rgba(0,0,0,.7);
   }
 
+  /* Monitor is physically rotated 90° CW (right side up). Rotate content
+     CCW to compensate so it appears upright regardless of OS display settings. */
+  html {
+    position: fixed;
+    width: 100vh;
+    height: 100vw;
+    top: calc(50% - 50vw);
+    left: calc(50% - 50vh);
+    transform: rotate(-90deg);
+    transform-origin: center;
+    overflow: hidden;
+  }
+
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; height: 100%; }
   body {
