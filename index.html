@@ -1013,16 +1013,16 @@
   }
   .snowflake {
     position: absolute;
-    top: -120px;
-    background: radial-gradient(circle at 35% 35%, #ffffff 0%, #ffffff 40%, rgba(255,255,255,.6) 70%, rgba(255,255,255,.15) 100%);
-    border-radius: 50%;
+    top: -80px;
     pointer-events: none;
-    box-shadow: 0 0 18px rgba(255,255,255,.45);
+    user-select: none;
+    filter: drop-shadow(0 0 6px rgba(255,255,255,.45));
     animation: snow-fall linear forwards;
   }
+  .snowflake svg { width: 100%; height: 100%; display: block; }
   @keyframes snow-fall {
-    0%   { transform: translate3d(0, 0, 0) rotate(0deg); }
-    100% { transform: translate3d(var(--drift, 30px), 100vh, 0) rotate(360deg); }
+    from { transform: translate3d(0, 0, 0) rotate(var(--rot-start, 0deg)); }
+    to   { transform: translate3d(var(--drift, 30px), 100vh, 0) rotate(var(--rot-end, 540deg)); }
   }
 
   /* ------------------------------------------------------------------
@@ -1910,31 +1910,86 @@ function scheduleFireworks() {
   modeTimers.push(t);
 }
 
-// --- Christmas: snowfall (chunky flakes) ---
+// --- Christmas: snowfall (unique crystalline flakes) ---
+const SNOWFLAKE_SVGS = [
+  // 1: Simple 6-arm star with center dot
+  '<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" stroke="#fff" stroke-width="1.4" stroke-linecap="round" fill="none">'
+    + '<line x1="16" y1="3" x2="16" y2="29"/>'
+    + '<line x1="4.7" y1="9.5" x2="27.3" y2="22.5"/>'
+    + '<line x1="4.7" y1="22.5" x2="27.3" y2="9.5"/>'
+    + '<circle cx="16" cy="16" r="1.8" fill="#fff" stroke="none"/>'
+    + '</svg>',
+  // 2: 6-arm with V-branches near tips (classic dendrite)
+  '<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" stroke="#fff" stroke-width="1.2" stroke-linecap="round" fill="none">'
+    + '<line x1="16" y1="3" x2="16" y2="29"/>'
+    + '<line x1="16" y1="7" x2="13" y2="4"/><line x1="16" y1="7" x2="19" y2="4"/>'
+    + '<line x1="16" y1="25" x2="13" y2="28"/><line x1="16" y1="25" x2="19" y2="28"/>'
+    + '<line x1="4.7" y1="9.5" x2="27.3" y2="22.5"/>'
+    + '<line x1="7.4" y1="11" x2="6.7" y2="7.2"/><line x1="7.4" y1="11" x2="11.1" y2="9.7"/>'
+    + '<line x1="24.6" y1="21" x2="25.3" y2="24.8"/><line x1="24.6" y1="21" x2="20.9" y2="22.3"/>'
+    + '<line x1="4.7" y1="22.5" x2="27.3" y2="9.5"/>'
+    + '<line x1="7.4" y1="21" x2="11.1" y2="22.3"/><line x1="7.4" y1="21" x2="6.7" y2="24.8"/>'
+    + '<line x1="24.6" y1="11" x2="20.9" y2="9.7"/><line x1="24.6" y1="11" x2="25.3" y2="7.2"/>'
+    + '</svg>',
+  // 3: 6-arm asterisk with end-caps (beaded)
+  '<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" stroke="#fff" stroke-width="1.5" stroke-linecap="round" fill="none">'
+    + '<line x1="16" y1="4" x2="16" y2="28"/>'
+    + '<line x1="5.6" y1="10" x2="26.4" y2="22"/>'
+    + '<line x1="5.6" y1="22" x2="26.4" y2="10"/>'
+    + '<circle cx="16" cy="4"   r="1.6" fill="#fff" stroke="none"/>'
+    + '<circle cx="16" cy="28"  r="1.6" fill="#fff" stroke="none"/>'
+    + '<circle cx="5.6" cy="10" r="1.6" fill="#fff" stroke="none"/>'
+    + '<circle cx="26.4" cy="22" r="1.6" fill="#fff" stroke="none"/>'
+    + '<circle cx="5.6" cy="22" r="1.6" fill="#fff" stroke="none"/>'
+    + '<circle cx="26.4" cy="10" r="1.6" fill="#fff" stroke="none"/>'
+    + '</svg>',
+  // 4: Hexagonal lace
+  '<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" stroke="#fff" stroke-width="1.2" stroke-linecap="round" fill="none">'
+    + '<polygon points="16,11 20.3,13.5 20.3,18.5 16,21 11.7,18.5 11.7,13.5" fill="#fff" fill-opacity=".22"/>'
+    + '<line x1="16" y1="3" x2="16" y2="11"/>'
+    + '<line x1="16" y1="21" x2="16" y2="29"/>'
+    + '<line x1="20.3" y1="13.5" x2="27.3" y2="9.5"/>'
+    + '<line x1="20.3" y1="18.5" x2="27.3" y2="22.5"/>'
+    + '<line x1="11.7" y1="13.5" x2="4.7" y2="9.5"/>'
+    + '<line x1="11.7" y1="18.5" x2="4.7" y2="22.5"/>'
+    + '<circle cx="16" cy="3"   r="1.4" fill="#fff" stroke="none"/>'
+    + '<circle cx="16" cy="29"  r="1.4" fill="#fff" stroke="none"/>'
+    + '<circle cx="27.3" cy="9.5" r="1.4" fill="#fff" stroke="none"/>'
+    + '<circle cx="27.3" cy="22.5" r="1.4" fill="#fff" stroke="none"/>'
+    + '<circle cx="4.7" cy="9.5"  r="1.4" fill="#fff" stroke="none"/>'
+    + '<circle cx="4.7" cy="22.5" r="1.4" fill="#fff" stroke="none"/>'
+    + '</svg>',
+];
 function spawnSnowflake() {
   const container = document.getElementById('christmas-snow');
   if (!container) return;
   const flake = document.createElement('div');
   flake.className = 'snowflake';
-  const size = 40 + Math.random() * 80;              // 40–120px circles (10× previous)
+  const size = 20 + Math.random() * 40;              // 20–60px (half of previous)
   flake.style.left = (Math.random() * 100) + '%';
   flake.style.width = size + 'px';
   flake.style.height = size + 'px';
-  flake.style.opacity = (0.5 + Math.random() * 0.35).toFixed(2);
-  const duration = 10 + Math.random() * 10;          // 10–20s slow drift (heavier flakes feel less rushed)
+  flake.style.opacity = (0.55 + Math.random() * 0.35).toFixed(2);
+  const duration = 7 + Math.random() * 6;            // 7–13s (slightly faster)
   flake.style.animationDuration = duration + 's';
-  const drift = (Math.random() * 200 - 100).toFixed(0) + 'px';
+  const drift = (Math.random() * 180 - 90).toFixed(0) + 'px';
   flake.style.setProperty('--drift', drift);
+  // Random starting orientation + spin amount so every flake is unique
+  const rotStart = Math.random() * 360;
+  const rotEnd   = rotStart + 180 + Math.random() * 540;
+  flake.style.setProperty('--rot-start', rotStart.toFixed(0) + 'deg');
+  flake.style.setProperty('--rot-end',   rotEnd.toFixed(0)   + 'deg');
+  flake.innerHTML = SNOWFLAKE_SVGS[Math.floor(Math.random() * SNOWFLAKE_SVGS.length)];
   container.appendChild(flake);
   setTimeout(() => flake.remove(), duration * 1000 + 200);
 }
 function startSnow() {
-  // Fewer, larger flakes — pre-seed 8, then spawn one every ~1.2s
-  for (let i = 0; i < 8; i++) {
-    const t = setTimeout(spawnSnowflake, i * 900);
+  // Pre-seed 10 staggered, then spawn one every ~900ms
+  for (let i = 0; i < 10; i++) {
+    const t = setTimeout(spawnSnowflake, i * 700);
     modeTimers.push(t);
   }
-  const interval = setInterval(spawnSnowflake, 1200);
+  const interval = setInterval(spawnSnowflake, 900);
   modeTimers.push(interval);
 }
 
@@ -1947,8 +2002,8 @@ function spawnConfettiPiece() {
   c.className = 'confetti';
   const shape = Math.floor(Math.random() * 3);
   const color = CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)];
-  const w = 90 + Math.random() * 90;    // 90–180px (5× previous 18–36)
-  const h = 120 + Math.random() * 120;  // 120–240px (5× previous 24–48)
+  const w = 45 + Math.random() * 45;    // 45–90px (half of previous)
+  const h = 60 + Math.random() * 60;    // 60–120px (half of previous)
   c.style.left = (Math.random() * 100) + '%';
   c.style.background = color;
   c.style.width = w + 'px';
