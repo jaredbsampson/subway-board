@@ -716,15 +716,18 @@
     font-weight: 900;
     text-transform: uppercase;
     letter-spacing: -.005em;
-    line-height: .95;
+    line-height: .9;
   }
+  /* Stack the two words onto their own lines */
   body[data-mode="america"] .masthead h1 em {
+    display: block;
     font-style: normal;
     font-weight: 900;
     color: var(--accent);
   }
-  body[data-mode="america"] .masthead h1::before {
-    content: "★ ★ ★ ";
+  /* Line 1: "SUBWAY ★ ★ ★" — red stars trailing the white word */
+  body[data-mode="america"] .masthead h1 .masthead-word::after {
+    content: " ★ ★ ★";
     color: var(--accent);
     font-family: 'Fraunces', serif;
     font-weight: 700;
@@ -732,8 +735,9 @@
     letter-spacing: .25em;
     vertical-align: .25em;
   }
-  body[data-mode="america"] .masthead h1::after {
-    content: " ★ ★ ★";
+  /* Line 2: "★ ★ ★ DEPARTURES" — white stars leading the red word */
+  body[data-mode="america"] .masthead h1 em::before {
+    content: "★ ★ ★ ";
     color: #ffffff;
     font-family: 'Fraunces', serif;
     font-weight: 700;
@@ -1272,7 +1276,7 @@
         <span id="updated" class="updated-line">UPDATED —</span>
       </div>
     </div>
-    <h1>Subway <em>Departures</em></h1>
+    <h1><span class="masthead-word">Subway</span> <em>Departures</em></h1>
     <div class="right">
       <a class="qr-link" id="qr-link" href="control.html" aria-label="Open settings">
         <img id="qr-img" alt="" />
