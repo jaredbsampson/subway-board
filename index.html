@@ -32,20 +32,6 @@
     --shadow:       0 1px 0 rgba(0,0,0,.4), 0 30px 60px -30px rgba(0,0,0,.7);
   }
 
-  /* TV is portrait (rotated CW). OS defaults to landscape, making content
-     appear rotated CW. Rotate -90° in CSS so it appears upright regardless
-     of whether the OS rotation setting sticks. */
-  html {
-    position: fixed;
-    width: 100vh;
-    height: 100vw;
-    top: calc(50% - 50vw);
-    left: calc(50% - 50vh);
-    transform: rotate(-90deg);
-    transform-origin: center;
-    overflow: hidden;
-  }
-
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; height: 100%; }
   body {
