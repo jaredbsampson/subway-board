@@ -505,6 +505,17 @@
   </div>
 
   <section>
+    <h2>Display</h2>
+    <div class="theme-row">
+      <button data-screen="subway" id="screen-subway" class="active">Subway</button>
+      <button data-screen="35easy" id="screen-35easy">35 Easy</button>
+    </div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-faint);margin-top:10px;text-align:center">
+      <a href="35easy-control.html" style="color:inherit;text-decoration:none;border-bottom:1px dashed var(--rule);padding-bottom:2px">Open 35 Easy controls →</a>
+    </div>
+  </section>
+
+  <section>
     <h2>Brightness</h2>
     <div class="brightness">
       <div class="brightness-row">
@@ -808,6 +819,9 @@ function applyToUI() {
   document.querySelectorAll('[data-late]').forEach(b => {
     b.classList.toggle('active', b.dataset.late === (state.lateMode || 'normal'));
   });
+  document.querySelectorAll('[data-screen]').forEach(b => {
+    b.classList.toggle('active', b.dataset.screen === (state.screen || 'subway'));
+  });
   applyModeUI();
   $('sched-on').classList.toggle('on', state.schedule.enabled);
   $('dim-at').value = state.schedule.dimAt;
@@ -885,6 +899,11 @@ document.querySelectorAll('[data-theme]').forEach(b => {
 // late-mode buttons
 document.querySelectorAll('[data-late]').forEach(b => {
   b.addEventListener('click', () => save({ lateMode: b.dataset.late }));
+});
+
+// display screen buttons (Subway / 35 Easy)
+document.querySelectorAll('[data-screen]').forEach(b => {
+  b.addEventListener('click', () => save({ screen: b.dataset.screen }));
 });
 
 // mode buttons — short tap on Sexy = gag, hold 2s (after a 300ms grace) = Date Night.
