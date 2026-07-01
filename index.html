@@ -838,7 +838,10 @@
     animation: firework-burst 1.1s cubic-bezier(.2,.7,.2,1) forwards;
   }
   /* Adjust frame padding so content clears the thicker top + bottom stripes */
-  body[data-mode="america"] .frame { padding-top: clamp(52px, 5.2vw, 120px); padding-bottom: clamp(64px, 5.9vw, 120px); }
+  /* Just enough padding to clear the 24px fixed stripes with a modest buffer;
+     was clamp(52px,5.2vw,120px) / clamp(64px,5.9vw,120px) which pushed content
+     off the bottom of a portrait 4K screen. */
+  body[data-mode="america"] .frame { padding-top: clamp(38px, 4.1vw, 88px); padding-bottom: clamp(46px, 4.6vw, 88px); }
 
   /* ------------------------------------------------------------------
      2) SPOOKY — elegant gothic, Edward Gorey vintage horror
