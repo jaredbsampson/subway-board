@@ -422,6 +422,27 @@
   }
   .offline-banner.show { display: block; }
 
+  /* Firework particles for the every-30-min bursts */
+  .firework {
+    position: absolute;
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    animation: firework-burst 1.1s cubic-bezier(.2,.7,.2,1) forwards;
+  }
+  @keyframes firework-burst {
+    0%   { transform: translate(-50%, -50%) scale(.4); opacity: 0; }
+    15%  { opacity: 1; }
+    100% { transform: translate(var(--dx), var(--dy)) scale(1); opacity: 0; }
+  }
+  .hourly-fireworks {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+
   /* Earthquake shake — keep the playful glitch */
   @keyframes shake-small {
     0%, 100% { transform: translate(0, 0); }
@@ -441,6 +462,7 @@
 <body>
 
 <div id="brightness-overlay" style="position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:9999;transition:opacity .8s ease"></div>
+<div class="hourly-fireworks" id="hourly-fireworks"></div>
 
 <div class="frame">
 
@@ -649,8 +671,13 @@ async function refresh() {
 const overlay = document.getElementById('brightness-overlay');
 function applyBrightness(pct) {
   if (typeof pct !== 'number' || isNaN(pct)) return;
-  const dim = Math.max(0, Math.min(0.9, (100 - pct) / 100));
+  const dim = Math.max(0, Math.min(1, (100 - pct) / 100));
   overlay.style.opacity = dim;
+}
+// 2–5 AM local: fully black to give the monitor a break, all modes.
+function isMonitorSleepHours() {
+  const h = new Date().getHours();
+  return h >= 2 && h < 5;
 }
 function brightnessFromSchedule(schedule, manual) {
   if (!schedule || !schedule.enabled) return manual;
@@ -675,7 +702,9 @@ async function pollSettings() {
       location.href = 'index.html';
       return;
     }
-    applyBrightness(brightnessFromSchedule(s.schedule, s.brightness));
+    // 2–5 AM: monitor rest. Force full black.
+    const target = isMonitorSleepHours() ? 0 : brightnessFromSchedule(s.schedule, s.brightness);
+    applyBrightness(target);
   } catch {}
 }
 
@@ -713,6 +742,50 @@ function scheduleNextShake() {
   const delay = 45_000 + Math.random() * 90_000;
   setTimeout(() => { triggerShake(); scheduleNextShake(); }, delay);
 }
+
+// ---------- hourly fireworks: bursts every :00 and :30, behind the text ----------
+function spawnFireworksShow() {
+  const container = document.getElementById('hourly-fireworks');
+  if (!container) return;
+  const w = container.offsetWidth || window.innerWidth;
+  const h = container.offsetHeight || window.innerHeight;
+  const colors = ['#ff3b6b','#ffba2e','#4ea0ff','#25e088','#ff79b8','#f4f1e8'];
+  const bursts = 4 + Math.floor(Math.random() * 3);
+  for (let b = 0; b < bursts; b++) {
+    setTimeout(() => {
+      const cx = (0.15 + Math.random() * 0.7) * w;
+      const cy = (0.15 + Math.random() * 0.55) * h;
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      const particleCount = 18 + Math.floor(Math.random() * 8);
+      const radius = 90 + Math.random() * 80;
+      for (let i = 0; i < particleCount; i++) {
+        const angle = (i / particleCount) * Math.PI * 2 + Math.random() * 0.2;
+        const dist = radius * (0.7 + Math.random() * 0.6);
+        const p = document.createElement('div');
+        p.className = 'firework';
+        p.style.left = cx + 'px';
+        p.style.top  = cy + 'px';
+        p.style.background = color;
+        p.style.boxShadow = `0 0 10px ${color}, 0 0 22px ${color}`;
+        p.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+        p.style.setProperty('--dy', Math.sin(angle) * dist + 'px');
+        container.appendChild(p);
+        setTimeout(() => p.remove(), 1300);
+      }
+    }, b * 220 + Math.random() * 400);
+  }
+}
+let lastFireworkMinute = -1;
+setInterval(() => {
+  if (isMonitorSleepHours()) return;
+  const m = new Date().getMinutes();
+  if ((m === 0 || m === 30) && m !== lastFireworkMinute) {
+    lastFireworkMinute = m;
+    spawnFireworksShow();
+  } else if (m !== 0 && m !== 30) {
+    lastFireworkMinute = -1;
+  }
+}, 1000);
 
 // ---------- boot ----------
 tickClock();
