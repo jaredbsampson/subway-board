@@ -39,12 +39,15 @@
 
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; height: 100%; }
+  /* Kiosk display: no scroll — prevents scrollbar toggle from creating a
+     vw-based layout feedback loop that visually jitters text. */
+  html { overflow: hidden; scrollbar-gutter: stable; overscroll-behavior: none; }
   body {
     font-family: 'Barlow Condensed', system-ui, sans-serif;
     background: var(--bg);
     color: var(--ink);
     -webkit-font-smoothing: antialiased;
-    overflow-x: hidden;
+    overflow: hidden;
     min-height: 100vh;
   }
   /* faint stadium-lights vignette */
