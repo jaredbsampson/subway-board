@@ -47,7 +47,10 @@
     -moz-osx-font-smoothing: grayscale;
     overflow: hidden;
     min-height: 100vh;
-    transition: background .6s ease, color .6s ease;
+    /* No background/color transition: children snap instantly while body fades,
+       which reads as a flash of unreadable text on every theme/mode switch —
+       and a throttled tab can freeze the fade mid-flight, stranding the board
+       with one mode's text on another mode's background. Snap cleanly instead. */
   }
   /* paper grain — pure CSS, no images */
   body::before {
@@ -760,8 +763,8 @@
     content: "";
     display: block;
     grid-column: 1 / -1;
-    height: 14px;
-    margin-top: 8px;
+    height: clamp(14px, 1.2vw, 28px);
+    margin-top: clamp(8px, .6vw, 16px);
     background:
       linear-gradient(
         to right,
@@ -785,10 +788,10 @@
     color: #ffffff;
     font-family: 'Fraunces', serif;
     font-weight: 700;
-    font-size: 14px;
+    font-size: clamp(14px, 1.3vw, 30px);
     letter-spacing: .25em;
     background: var(--paper);
-    padding: 0 10px;
+    padding: 0 clamp(10px, .9vw, 22px);
     z-index: 1;
     line-height: 1;
   }
@@ -881,8 +884,12 @@
     font-weight: 500;
     color: var(--accent);
   }
-  /* Tattered/torn edge effect on the frame */
+  /* Tattered/torn edge effect on the frame. The frame gets its own paper
+     background on a darker backdrop — without that contrast the torn edge
+     is invisible (paper-on-paper). */
+  body[data-mode="spooky"] { background: #030303; }
   body[data-mode="spooky"] .frame {
+    background: var(--paper);
     clip-path: polygon(
       0% 0.6%,  3% 0%, 6% 0.4%, 11% 0%, 17% 0.5%, 24% 0%, 31% 0.3%, 38% 0%,
       46% 0.5%, 55% 0%, 63% 0.3%, 71% 0%, 79% 0.4%, 87% 0%, 94% 0.3%, 100% 0%,
@@ -890,22 +897,29 @@
       48% 100%, 40% 99.5%, 32% 100%, 24% 99.6%, 15% 100%, 8% 99.7%, 0% 100%
     );
   }
-  /* Cobwebs in two corners */
+  /* Cobwebs in two corners — sized to the viewport so they read on a 4K wall
+     display, not just a laptop (fixed 140px was invisible at that scale). */
   body[data-mode="spooky"] .spooky-cobweb {
     display: block;
     position: absolute;
-    width: 140px; height: 140px;
-    opacity: .35;
+    width:  clamp(120px, 13vw, 300px);
+    height: clamp(120px, 13vw, 300px);
+    opacity: .45;
   }
   body[data-mode="spooky"] .spooky-cobweb-left  { top: 0; left: 0; }
   body[data-mode="spooky"] .spooky-cobweb-right { top: 0; right: 0; transform: scaleX(-1); }
-  /* Crow silhouette tucked onto the masthead */
+  /* Crow silhouette perched on the top edge, left of the masthead.
+     Rim-glow (same trick as the ghosts) so the black bird reads
+     against the near-black paper. */
   body[data-mode="spooky"] .spooky-crow {
     display: block;
     position: absolute;
-    top: 18px; right: 14px;
-    width: 70px; height: 50px;
-    opacity: .85;
+    top: clamp(6px, .5vw, 16px);
+    left: clamp(130px, 14vw, 330px);
+    width:  clamp(64px, 5.5vw, 130px);
+    height: clamp(46px, 3.9vw, 93px);
+    opacity: .95;
+    filter: drop-shadow(0 0 10px rgba(236,229,214,.35));
   }
   /* Drifting fog at the bottom */
   body[data-mode="spooky"] .spooky-fog {
@@ -913,11 +927,11 @@
     position: fixed;
     left: -25%; right: -25%;
     bottom: 0;
-    height: 180px;
+    height: clamp(160px, 12vh, 460px);
     background:
-      radial-gradient(ellipse at 25% 80%, rgba(255,255,255,.08), transparent 60%),
-      radial-gradient(ellipse at 65% 90%, rgba(255,255,255,.06), transparent 60%),
-      radial-gradient(ellipse at 90% 75%, rgba(255,255,255,.05), transparent 65%);
+      radial-gradient(ellipse at 25% 80%, rgba(255,255,255,.12), transparent 60%),
+      radial-gradient(ellipse at 65% 90%, rgba(255,255,255,.09), transparent 60%),
+      radial-gradient(ellipse at 90% 75%, rgba(255,255,255,.08), transparent 65%);
     filter: blur(20px);
   }
   @keyframes spooky-fog-drift {
@@ -1005,8 +1019,8 @@
     content: "";
     position: absolute;
     top: clamp(8px, 1vw, 24px);
-    width: clamp(40px, 5vw, 78px);
-    height: clamp(40px, 5vw, 78px);
+    width: clamp(40px, 6vw, 140px);
+    height: clamp(40px, 6vw, 140px);
     background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' fill='none'><path d='M32 12 Q24 24 14 22 Q22 30 18 42 Q28 36 32 44 Q36 36 46 42 Q42 30 50 22 Q40 24 32 12Z' fill='%23C9A227' stroke='%23C9A227' stroke-width='1'/><circle cx='28' cy='40' r='3' fill='%23A8201A'/><circle cx='36' cy='42' r='3' fill='%23A8201A'/><circle cx='32' cy='36' r='3' fill='%23A8201A'/></svg>");
     background-size: contain;
     background-repeat: no-repeat;
@@ -1058,6 +1072,10 @@
     font-style: italic;
     font-weight: 800;
     letter-spacing: -.025em;
+    /* Playfair 800 italic runs wider than Fraunces — size down so
+       "Subway Departures" stays on one line instead of wrapping. */
+    font-size: clamp(36px, 9.2vw, 168px);
+    white-space: nowrap;
   }
   body[data-mode="birthday"] .masthead h1 em {
     color: #A4234A;
@@ -1080,17 +1098,19 @@
     display: block;
     position: absolute;
     inset: 0;
+    /* Dot sizes in vw so the border sprinkle is visible on a 4K wall
+       display (fixed 3–4px dots vanished at that scale). */
     background-image:
-      radial-gradient(circle at 4% 12%, #A4234A 0 4px, transparent 5px),
-      radial-gradient(circle at 96% 8%, #D4AF37 0 4px, transparent 5px),
-      radial-gradient(circle at 2% 88%, #D4AF37 0 4px, transparent 5px),
-      radial-gradient(circle at 97% 92%, #A4234A 0 4px, transparent 5px),
-      radial-gradient(circle at 10% 95%, #1f2a44 0 3px, transparent 4px),
-      radial-gradient(circle at 88% 14%, #1f2a44 0 3px, transparent 4px),
-      radial-gradient(circle at 50% 4%,  #D4AF37 0 3px, transparent 4px),
-      radial-gradient(circle at 50% 97%, #A4234A 0 3px, transparent 4px),
-      radial-gradient(circle at 18% 6%,  #c2477a 0 3px, transparent 4px),
-      radial-gradient(circle at 82% 95%, #c2477a 0 3px, transparent 4px);
+      radial-gradient(circle at 4% 12%, #A4234A 0 .45vw, transparent calc(.45vw + 1px)),
+      radial-gradient(circle at 96% 8%, #D4AF37 0 .45vw, transparent calc(.45vw + 1px)),
+      radial-gradient(circle at 2% 88%, #D4AF37 0 .45vw, transparent calc(.45vw + 1px)),
+      radial-gradient(circle at 97% 92%, #A4234A 0 .45vw, transparent calc(.45vw + 1px)),
+      radial-gradient(circle at 10% 95%, #1f2a44 0 .35vw, transparent calc(.35vw + 1px)),
+      radial-gradient(circle at 88% 14%, #1f2a44 0 .35vw, transparent calc(.35vw + 1px)),
+      radial-gradient(circle at 50% 4%,  #D4AF37 0 .35vw, transparent calc(.35vw + 1px)),
+      radial-gradient(circle at 50% 97%, #A4234A 0 .35vw, transparent calc(.35vw + 1px)),
+      radial-gradient(circle at 18% 6%,  #c2477a 0 .35vw, transparent calc(.35vw + 1px)),
+      radial-gradient(circle at 82% 95%, #c2477a 0 .35vw, transparent calc(.35vw + 1px));
     opacity: .85;
   }
   body[data-mode="birthday"] .birthday-confetti-falling {
@@ -1180,6 +1200,9 @@
     font-weight: 700;
     font-style: italic;
     letter-spacing: -.01em;
+    /* Bodoni italic runs wider than Fraunces — keep the masthead on one line. */
+    font-size: clamp(36px, 9.6vw, 176px);
+    white-space: nowrap;
   }
   body[data-mode="date-night"] .masthead h1 em {
     color: var(--accent);
@@ -1292,18 +1315,20 @@
     </g>
   </svg>
   <svg class="spooky-crow" viewBox="0 0 100 70" xmlns="http://www.w3.org/2000/svg">
-    <g fill="#0D0D0D" stroke="#0D0D0D" stroke-linejoin="round">
+    <!-- Body-black fill was invisible against the near-black paper; an
+         engraved cream outline keeps it a silhouette but visible. -->
+    <g fill="#000000" stroke="rgba(236,229,214,.75)" stroke-width="2.5" stroke-linejoin="round">
       <!-- body -->
       <path d="M22 42 Q18 32 30 28 Q40 24 56 28 L72 30 L80 36 L74 40 L60 42 L48 46 L36 48 Q26 48 22 42Z"/>
       <!-- tail -->
       <path d="M22 42 L8 50 L12 44 L20 40Z"/>
       <!-- beak -->
-      <path d="M80 36 L92 34 L80 40Z" fill="#3a2a14" stroke="#3a2a14"/>
+      <path d="M80 36 L92 34 L80 40Z" fill="#3a2a14" stroke="rgba(236,229,214,.55)"/>
       <!-- legs -->
-      <path d="M38 48 L36 60 M36 60 L32 64 M36 60 L40 64" stroke-width="1.2" fill="none"/>
-      <path d="M52 48 L52 60 M52 60 L48 64 M52 60 L56 64" stroke-width="1.2" fill="none"/>
+      <path d="M38 48 L36 60 M36 60 L32 64 M36 60 L40 64" stroke="rgba(236,229,214,.7)" stroke-width="1.4" fill="none"/>
+      <path d="M52 48 L52 60 M52 60 L48 64 M52 60 L56 64" stroke="rgba(236,229,214,.7)" stroke-width="1.4" fill="none"/>
       <!-- eye -->
-      <circle cx="76" cy="34" r="1.4" fill="#D2691E"/>
+      <circle cx="76" cy="34" r="1.6" fill="#D2691E" stroke="none"/>
     </g>
   </svg>
   <div class="spooky-fog"></div>
@@ -1418,99 +1443,53 @@ const config = {
   demo: false,
 };
 
-// ---------- destination labelling: minimal lookup of common UWS terminals ----------
-const TERMINUS = {
-  // 1 train
-  '101': { borough: 'The Bronx',  name: 'Van Cortlandt Pk–242 St' },
-  '142': { borough: 'Manhattan',  name: 'South Ferry' },
-  // 2 train
-  '201': { borough: 'The Bronx',  name: 'Wakefield–241 St' },
-  '247': { borough: 'Brooklyn',   name: 'Flatbush Av' },
-  // 3 train
-  '301': { borough: 'Harlem',     name: '148 St' },
-  '257': { borough: 'Brooklyn',   name: 'New Lots Av' },
-  // B
-  'D01': { borough: 'The Bronx',  name: 'Bedford Park Bd' },
-  'D03': { borough: 'The Bronx',  name: 'Norwood–205 St' },
-  'D43': { borough: 'Brooklyn',   name: 'Brighton Beach' },
-  // C
-  'A09': { borough: 'Manhattan',  name: '168 St–Washington Hts' },
-  'A02': { borough: 'Manhattan',  name: 'Inwood–207 St' },
-  'A55': { borough: 'Brooklyn',   name: 'Euclid Av' },
-};
-
-function destFor(routeId, stopId) {
-  if (TERMINUS[stopId]) return TERMINUS[stopId];
-  // sensible guess by direction letter
-  const dir = stopId.endsWith('N') ? 'N' : stopId.endsWith('S') ? 'S' : null;
-  if (dir === 'N') return { borough: 'Uptown',   name: routeId + ' train' };
-  if (dir === 'S') return { borough: 'Downtown', name: routeId + ' train' };
-  return { borough: '—', name: routeId + ' train' };
-}
-
 // ---------- demo data so the board never looks empty ----------
-function demoData(stopId) {
-  const now = Date.now();
-  const m = (n) => now + n * 60 * 1000;
+const DEMO_DEST = {
+  '1N': 'Van Cortlandt Pk–242 St', '1S': 'South Ferry',
+  '2N': 'Wakefield–241 St',        '2S': 'Flatbush Av',
+  '3N': 'Harlem–148 St',           '3S': 'New Lots Av',
+  'BN': 'Bedford Pk Blvd',         'BS': 'Brighton Beach',
+  'CN': '168 St–Washington Hts',   'CS': 'Euclid Av',
+};
+function demoArrivals(stopId) {
+  const nowSec = Math.floor(Date.now() / 1000);
+  const mk = (route, dir, mins) => ({
+    route,
+    direction: dir,
+    stop_id: stopId + dir,
+    destination: DEMO_DEST[route + dir] || (dir === 'N' ? 'Uptown' : 'Downtown'),
+    arrival: nowSec + mins * 60,
+  });
   if (stopId === '120') return [
-    { route_id: '1', stop_id: '120N', estimated_current_stop_arrival_time: m(2) },
-    { route_id: '2', stop_id: '120N', estimated_current_stop_arrival_time: m(5) },
-    { route_id: '3', stop_id: '120N', estimated_current_stop_arrival_time: m(11) },
-    { route_id: '1', stop_id: '120N', estimated_current_stop_arrival_time: m(16) },
-    { route_id: '1', stop_id: '120S', estimated_current_stop_arrival_time: m(3) },
-    { route_id: '2', stop_id: '120S', estimated_current_stop_arrival_time: m(7) },
-    { route_id: '3', stop_id: '120S', estimated_current_stop_arrival_time: m(12) },
-    { route_id: '1', stop_id: '120S', estimated_current_stop_arrival_time: m(18) },
+    mk('1','N',2), mk('2','N',5), mk('3','N',11), mk('1','N',16),
+    mk('1','S',3), mk('2','S',7), mk('3','S',12), mk('1','S',18),
   ];
   if (stopId === 'A14') return [
-    { route_id: 'C', stop_id: 'A14N', estimated_current_stop_arrival_time: m(3) },
-    { route_id: 'B', stop_id: 'A14N', estimated_current_stop_arrival_time: m(6) },
-    { route_id: 'C', stop_id: 'A14N', estimated_current_stop_arrival_time: m(13) },
-    { route_id: 'B', stop_id: 'A14N', estimated_current_stop_arrival_time: m(19) },
-    { route_id: 'C', stop_id: 'A14S', estimated_current_stop_arrival_time: m(4) },
-    { route_id: 'B', stop_id: 'A14S', estimated_current_stop_arrival_time: m(9) },
-    { route_id: 'C', stop_id: 'A14S', estimated_current_stop_arrival_time: m(15) },
-    { route_id: 'B', stop_id: 'A14S', estimated_current_stop_arrival_time: m(21) },
+    mk('C','N',3), mk('B','N',6), mk('C','N',13), mk('B','N',19),
+    mk('C','S',4), mk('B','S',9), mk('C','S',15), mk('B','S',21),
   ];
   return [];
 }
 
 // ---------- fetch ----------
+// Returns { stops, live }. live=false means demo data is on screen — the
+// caller must surface that honestly (never leave the LIVE badge up).
 async function fetchAllArrivals() {
-  if (config.demo) {
+  const demo = () => {
     const r = {};
-    config.stations.forEach(s => r[s.id] = demoData(s.id).map(x => ({
-      route: x.route_id,
-      direction: x.stop_id.endsWith('N') ? 'N' : 'S',
-      stop_id: x.stop_id,
-      destination: (TERMINUS[x.stop_id] || destFor(x.route_id, x.stop_id).name),
-      arrival: Math.floor(x.estimated_current_stop_arrival_time / 1000),
-    })));
-    return r;
-  }
-  if (!config.apiUrl) {
-    setStatus('NO API · DEMO', true);
-    config.demo = true;
-    return fetchAllArrivals();
-  }
+    config.stations.forEach(s => r[s.id] = demoArrivals(s.id));
+    return { stops: r, live: false };
+  };
+  if (config.demo || !config.apiUrl) return demo();
   try {
     const ids = config.stations.map(s => s.id).join(',');
     const url = config.apiUrl.replace(/\/+$/, '') + '/?stops=' + encodeURIComponent(ids);
     const r = await fetch(url, { cache: 'no-store' });
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const data = await r.json();
-    return data.stops || {};
+    return { stops: data.stops || {}, live: true };
   } catch (e) {
-    setStatus('OFFLINE · DEMO', true);
-    const r = {};
-    config.stations.forEach(s => r[s.id] = demoData(s.id).map(x => ({
-      route: x.route_id,
-      direction: x.stop_id.endsWith('N') ? 'N' : 'S',
-      stop_id: x.stop_id,
-      destination: (TERMINUS[x.stop_id] || destFor(x.route_id, x.stop_id).name),
-      arrival: Math.floor(x.estimated_current_stop_arrival_time / 1000),
-    })));
-    return r;
+    return demo();
   }
 }
 
@@ -1640,11 +1619,15 @@ function tickClock() {
 }
 
 async function refresh() {
-  const all = await fetchAllArrivals();
-  config.stations.forEach(st => renderArrivals(st.slot, all[st.id] || []));
-  lastRefreshAt = Date.now();
+  const { stops, live } = await fetchAllArrivals();
+  config.stations.forEach(st => renderArrivals(st.slot, stops[st.id] || []));
+  if (live) {
+    lastRefreshAt = Date.now();   // only a real fetch counts as "updated"
+    setStatus('LIVE', false);
+  } else {
+    setStatus(config.apiUrl && !config.demo ? 'OFFLINE · DEMO' : 'NO API · DEMO', true);
+  }
   updateAgoText();
-  if (!config.demo) setStatus('LIVE', false);
 }
 
 function getControlUrl() {
@@ -1681,7 +1664,8 @@ function updateQR() {
   if (!img) return;
   const { bg, fg } = qrThemeColors();
   const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=0&color=${fg}&bgcolor=${bg}&data=${encodeURIComponent(url)}`;
-  img.onload  = () => { if (fallback) fallback.style.display = 'none'; };
+  img.style.display = '';  // undo a previous onerror hide so a later attempt can recover
+  img.onload  = () => { img.style.display = ''; if (fallback) fallback.style.display = 'none'; };
   img.onerror = () => { img.style.display = 'none'; if (fallback) fallback.style.display = ''; };
   img.src = qrSrc;
 }
@@ -1775,17 +1759,30 @@ function brightnessFromSchedule(schedule, manualBrightness) {
 }
 
 let lastReloadAt = 0;
+
+// Last settings seen from the worker, cached across reloads so the dim
+// schedule and monitor rest keep working even when the network is down.
+let lastSettings = null;
+try { lastSettings = JSON.parse(localStorage.getItem('subway-settings-cache') || 'null'); } catch {}
+
+function applyBrightnessFromSettings() {
+  // 2–5 AM: force full black regardless of schedule / manual brightness.
+  if (isMonitorSleepHours()) { applyBrightness(0); return; }
+  if (!lastSettings) { applyBrightness(100); return; }
+  applyBrightness(brightnessFromSchedule(lastSettings.schedule, lastSettings.brightness));
+}
+
 async function pollSettingsWithReload() {
   if (!config.apiUrl) return;
   try {
     const r = await fetch(config.apiUrl.replace(/\/+$/, '') + '/brightness', { cache: 'no-store' });
     if (!r.ok) return;
     const s = await r.json();
+    lastSettings = s;
+    try { localStorage.setItem('subway-settings-cache', JSON.stringify(s)); } catch {}
     // If the wall display was switched to 35 Easy, navigate there.
     if (s.screen === '35easy') { location.href = '35easy.html'; return; }
-    // 2–5 AM: force full black regardless of schedule / manual brightness.
-    const target = isMonitorSleepHours() ? 0 : brightnessFromSchedule(s.schedule, s.brightness);
-    applyBrightness(target);
+    applyBrightnessFromSettings();
     applyTheme(s.theme);
     const nextLate = s.lateMode || 'normal';
     if (nextLate !== lateMode) {
@@ -1803,9 +1800,11 @@ async function pollSettingsWithReload() {
 }
 
 // Poll on a short interval so phone changes feel near-instant.
-// Also covers schedule re-evaluation since it runs every 5s.
 pollSettingsWithReload();
 setInterval(pollSettingsWithReload, 5_000);
+// Local enforcement: schedule + monitor rest must not depend on the network.
+applyBrightnessFromSettings();
+setInterval(applyBrightnessFromSettings, 30_000);
 
 // ---------- Holiday & Special Modes ----------
 const REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').matches;

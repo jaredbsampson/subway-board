@@ -669,20 +669,37 @@ function brightnessFromSchedule(schedule, manual) {
     : (minsNow >= brightAt || minsNow < dimAt);
   return inBrightWindow ? manual : schedule.dimTo;
 }
+let lastReloadAt = 0;
+let lastSettings = null;
+try { lastSettings = JSON.parse(localStorage.getItem('subway-settings-cache') || 'null'); } catch {}
+
+function applyBrightnessFromSettings() {
+  // 2–5 AM: monitor rest. Force full black — locally, so it holds offline.
+  if (isMonitorSleepHours()) { applyBrightness(0); return; }
+  if (!lastSettings) { applyBrightness(100); return; }
+  applyBrightness(brightnessFromSchedule(lastSettings.schedule, lastSettings.brightness));
+}
+
 async function pollSettings() {
   if (!config.apiUrl) return;
   try {
     const r = await fetch(config.apiUrl.replace(/\/+$/, '') + '/brightness', { cache: 'no-store' });
     if (!r.ok) return;
     const s = await r.json();
+    lastSettings = s;
+    try { localStorage.setItem('subway-settings-cache', JSON.stringify(s)); } catch {}
     // If wall display was switched to subway, go there.
     if (s.screen && s.screen !== '35easy') {
       location.href = 'index.html';
       return;
     }
-    // 2–5 AM: monitor rest. Force full black.
-    const target = isMonitorSleepHours() ? 0 : brightnessFromSchedule(s.schedule, s.brightness);
-    applyBrightness(target);
+    applyBrightnessFromSettings();
+    // "Reload Board" from the control page should reload this screen too.
+    if (s.reloadAt && lastReloadAt && s.reloadAt !== lastReloadAt) {
+      window.location.reload();
+      return;
+    }
+    lastReloadAt = s.reloadAt || 0;
   } catch {}
 }
 
@@ -729,6 +746,9 @@ refresh();
 setInterval(refresh, 5000);
 pollSettings();
 setInterval(pollSettings, 5000);
+// Local enforcement: monitor rest + dim schedule must not depend on the network.
+applyBrightnessFromSettings();
+setInterval(applyBrightnessFromSettings, 30_000);
 scheduleNextShake();
 
 window.addEventListener('storage', (e) => {
