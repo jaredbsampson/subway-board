@@ -79,6 +79,9 @@
     display: flex;
     flex-direction: column;
   }
+  /* Burn-in protection: the layout drifts around a ±3px orbit (JS steps it
+     once a minute). Eased so each step is imperceptible at viewing distance. */
+  .frame, .mode-decor { transition: transform 2s ease-in-out; }
   @media (max-width: 600px) { .frame { padding: 28px 22px 60px; } }
 
   /* ---------- MASTHEAD ---------- */
@@ -1814,11 +1817,13 @@ const VALID_MODES = new Set(['default','america','spooky','christmas','birthday'
 let currentMode = 'default';
 let modeTimers = [];  // timeout/interval handles to clear on mode change
 let spookyFlickerTimer = null;
+let fireworksTimer = null;
 
 function clearModeTimers() {
   modeTimers.forEach(t => { clearTimeout(t); clearInterval(t); });
   modeTimers = [];
   if (spookyFlickerTimer) { clearInterval(spookyFlickerTimer); spookyFlickerTimer = null; }
+  if (fireworksTimer) { clearTimeout(fireworksTimer); fireworksTimer = null; }
 }
 
 function clearParticleContainers() {
@@ -1981,15 +1986,14 @@ function spawnFirework() {
   }
 }
 function scheduleFireworks() {
+  // Single reused handle — pushing every rescheduled timeout onto modeTimers
+  // grew that array by one entry every few seconds for as long as America
+  // mode stayed up (weeks of kiosk uptime = tens of thousands of entries).
   const tick = () => {
     spawnFirework();
-    const next = 6000 + Math.random() * 4000;
-    const t = setTimeout(tick, next);
-    modeTimers.push(t);
+    fireworksTimer = setTimeout(tick, 6000 + Math.random() * 4000);
   };
-  // small initial delay
-  const t = setTimeout(tick, 1500);
-  modeTimers.push(t);
+  fireworksTimer = setTimeout(tick, 1500);
 }
 
 // --- Christmas: snowfall (unique crystalline flakes) ---
@@ -2190,6 +2194,43 @@ function applyMode(rawMode) {
 window.addEventListener('resize', () => {
   if (currentMode === 'america') buildStarField();
 });
+
+// ---------- burn-in protection: pixel orbit ----------
+// Walk every static edge (text, rules, decorations) around a small orbit so
+// no glyph parks on the same pixels for hours. One step per minute; over a
+// day each edge visits a 7×7px neighborhood. The background layers are
+// uniform color, so only the content needs to move.
+const ORBIT = [[0,0],[3,0],[3,3],[0,3],[-3,3],[-3,0],[-3,-3],[0,-3],[3,-3]];
+let orbitStepIndex = 0;
+function orbitStep() {
+  orbitStepIndex = (orbitStepIndex + 1) % ORBIT.length;
+  const [x, y] = ORBIT[orbitStepIndex];
+  const t = `translate(${x}px, ${y}px)`;
+  document.querySelectorAll('.frame, .mode-decor').forEach(el => el.style.transform = t);
+}
+setInterval(orbitStep, 60_000);
+
+// ---------- nightly maintenance reload ----------
+// Once a night, inside the 2–5 AM black window, replace the page with a
+// cache-busted URL. A browser left running for months accumulates memory
+// fragmentation and leaks; a nightly fresh boot resets all of it — and
+// picks up new deploys automatically, no button press needed.
+function localDateStamp() {
+  const d = new Date();
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+}
+function nightlyReload() {
+  if (new Date().getHours() !== 3) return;
+  const today = localDateStamp();
+  let last = null;
+  try { last = localStorage.getItem('subway-nightly-reload'); } catch {}
+  if (last === today) return;
+  try { localStorage.setItem('subway-nightly-reload', today); } catch {}
+  const u = new URL(location.href);
+  u.searchParams.set('r', 'nightly-' + today);
+  location.replace(u.toString());
+}
+setInterval(nightlyReload, 60_000);
 
 // ---------- earthquake glitch: shake random parts of the board on a random cadence ----------
 function triggerShake() {
