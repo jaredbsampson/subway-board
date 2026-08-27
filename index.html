@@ -1780,8 +1780,6 @@ async function pollSettingsWithReload() {
     const s = await r.json();
     lastSettings = s;
     try { localStorage.setItem('subway-settings-cache', JSON.stringify(s)); } catch {}
-    // If the wall display was switched to 35 Easy, navigate there.
-    if (s.screen === '35easy') { location.href = '35easy.html'; return; }
     applyBrightnessFromSettings();
     applyTheme(s.theme);
     const nextLate = s.lateMode || 'normal';
@@ -1792,7 +1790,11 @@ async function pollSettingsWithReload() {
     }
     if (typeof s.mode === 'string') applyMode(s.mode);
     if (s.reloadAt && lastReloadAt && s.reloadAt !== lastReloadAt) {
-      window.location.reload();
+      // Hard refresh: cache-bust the URL so the freshly deployed page always
+      // lands, even inside GitHub Pages' ~10-minute HTTP cache window.
+      const u = new URL(location.href);
+      u.searchParams.set('r', String(s.reloadAt));
+      location.replace(u.toString());
       return;
     }
     lastReloadAt = s.reloadAt || 0;
