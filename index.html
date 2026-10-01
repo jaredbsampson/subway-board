@@ -1880,13 +1880,15 @@ let spookyFlickerTimer = null;
 let fireworksTimer = null;
 let catCycleTimer = null;
 let catPeekTimers = [];
+let catWindowTimer = null;
+let catsActive = false;
 
 function clearModeTimers() {
   modeTimers.forEach(t => { clearTimeout(t); clearInterval(t); });
   modeTimers = [];
   if (spookyFlickerTimer) { clearInterval(spookyFlickerTimer); spookyFlickerTimer = null; }
   if (fireworksTimer) { clearTimeout(fireworksTimer); fireworksTimer = null; }
-  stopCats();
+  stopCatWindows();
 }
 
 function clearParticleContainers() {
@@ -1942,8 +1944,8 @@ function spawnGhost() {
   const ghost = document.createElement('div');
   ghost.className = 'spooky-ghost';
 
-  // ~18% chance of a ghost bagel instead of a classic ghost
-  const isBagel = Math.random() < 0.18;
+  // ~2% chance of a ghost bagel instead of a classic ghost — a rare treat
+  const isBagel = Math.random() < 0.02;
   const baseSize = 110 + Math.random() * 110;          // 110–220px base
   // Bagels ride smaller than the ghosts, and their viewBox is taller
   // because it carries the little "bagel" caption under the ring.
@@ -2012,12 +2014,38 @@ function catPeek() {
     setTimeout(() => small.classList.remove('peek'), hold + lag),
   ];
 }
+// The cats come out three times a day for a 20-minute spell. Inside that
+// window they keep peeking up and ducking back down rather than sitting
+// still — a pair of silhouettes parked for 20 unbroken minutes is exactly
+// the static-edge burn-in the pixel orbit exists to avoid.
+const CAT_WINDOWS = [9, 15, 20];       // local hours they come out
+const CAT_WINDOW_MINUTES = 20;
+
+function catsAreDue(d = new Date()) {
+  return CAT_WINDOWS.includes(d.getHours()) && d.getMinutes() < CAT_WINDOW_MINUTES;
+}
 function startCats() {
   const tick = () => {
     catPeek();
     catCycleTimer = setTimeout(tick, 24_000 + Math.random() * 22_000);
   };
-  catCycleTimer = setTimeout(tick, 6000);
+  catCycleTimer = setTimeout(tick, 4000);
+}
+// Clock-driven rather than a long countdown, so the schedule survives the
+// nightly reload and any hard refresh without drifting.
+function watchCatWindows() {
+  const check = () => {
+    const due = catsAreDue();
+    if (due && !catsActive) { catsActive = true; startCats(); }
+    else if (!due && catsActive) { catsActive = false; stopCats(); }
+  };
+  check();
+  catWindowTimer = setInterval(check, 20_000);
+}
+function stopCatWindows() {
+  if (catWindowTimer) { clearInterval(catWindowTimer); catWindowTimer = null; }
+  catsActive = false;
+  stopCats();
 }
 function stopCats() {
   if (catCycleTimer) { clearTimeout(catCycleTimer); catCycleTimer = null; }
@@ -2273,7 +2301,7 @@ function applyMode(rawMode) {
     // Ghosts always run — they drift slowly enough to be safe even with
     // prefers-reduced-motion. Flicker stays gated on motion preference.
     startGhosts();
-    startCats();
+    watchCatWindows();
     if (!REDUCED_MOTION) startSpookyFlicker();
   }
 
