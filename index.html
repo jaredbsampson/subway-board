@@ -945,6 +945,14 @@
   body[data-mode="spooky"] .spooky-fog {
     animation: spooky-fog-drift 24s ease-in-out infinite;
   }
+  /* Spooky's whole decor layer rides ABOVE the board. .mode-decor is a
+     stacking context (position:fixed + z-index:0), so every child was
+     trapped below .frame (z-index:1) no matter its own z-index — and once
+     spooky's frame gained an opaque paper background for the torn edge,
+     that trap hid the ghosts, crow and cobwebs behind it. Scoped to spooky
+     so every other mode's layering is untouched. */
+  body[data-mode="spooky"] .mode-decor { z-index: 3; }
+
   /* Ghosts — semi-opaque silhouettes floating across the viewport,
      above the frame so they're guaranteed visible against the dense data */
   body[data-mode="spooky"] .spooky-ghosts {
