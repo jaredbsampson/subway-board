@@ -1915,7 +1915,7 @@ const GHOST_SVG = '<svg viewBox="0 0 100 145" xmlns="http://www.w3.org/2000/svg"
   + '</svg>';
 // Ghost bagel — the hole doubles as the round "oooo" mouth, which is why
 // it needs no drawn mouth of its own. Sesame seeds scattered on the band.
-const BAGEL_GHOST_SVG = '<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">'
+const BAGEL_GHOST_SVG = '<svg viewBox="0 0 120 146" xmlns="http://www.w3.org/2000/svg">'
   + '<path fill-rule="evenodd" fill="#ffffff" d="'
   +   'M60 6 C86 6 114 28 114 60 C114 92 88 114 60 114 C32 114 6 92 6 60 C6 28 34 6 60 6 Z'
   +   'M60 39 C48 39 39 48 39 60 C39 72 48 81 60 81 C72 81 81 72 81 60 C81 48 72 39 60 39 Z'
@@ -1931,6 +1931,9 @@ const BAGEL_GHOST_SVG = '<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/200
   +   '<ellipse cx="19" cy="79" rx="3" ry="1.5" transform="rotate(44 19 79)"/>'
   +   '<ellipse cx="17" cy="56" rx="3" ry="1.5" transform="rotate(-82 17 56)"/>'
   + '</g>'
+  + '<text x="60" y="139" text-anchor="middle" fill="#ffffff"'
+  +   ' font-family="JetBrains Mono, ui-monospace, monospace"'
+  +   ' font-size="16" letter-spacing="1.4">bagel</text>'
   + '</svg>';
 
 function spawnGhost() {
@@ -1942,8 +1945,10 @@ function spawnGhost() {
   // ~18% chance of a ghost bagel instead of a classic ghost
   const isBagel = Math.random() < 0.18;
   const baseSize = 110 + Math.random() * 110;          // 110–220px base
-  const w = isBagel ? baseSize * 1.05 : baseSize;
-  const h = isBagel ? baseSize * 1.05 : baseSize * 1.18;
+  // Bagels ride smaller than the ghosts, and their viewBox is taller
+  // because it carries the little "bagel" caption under the ring.
+  const w = isBagel ? baseSize * 0.6 : baseSize;
+  const h = isBagel ? w * 1.217 : baseSize * 1.18;
 
   // Random trajectory angle. Right-going: -55°..+55°. Left-going:
   // 125°..235°. Excludes pure vertical to keep motion reading naturally.
