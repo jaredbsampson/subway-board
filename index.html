@@ -1946,8 +1946,10 @@ function spawnGhost() {
   const ghost = document.createElement('div');
   ghost.className = 'spooky-ghost';
 
-  // ~2% chance of a ghost bagel instead of a classic ghost — a rare treat
-  const isBagel = Math.random() < 0.02;
+  // ~12% of ghost spawns. Paired with the ~21s average spawn cadence that
+  // lands a bagel roughly every 3 minutes — retune both together if either
+  // the cadence or this rate changes.
+  const isBagel = Math.random() < 0.12;
   const baseSize = 110 + Math.random() * 110;          // 110–220px base
   // Bagels ride smaller than the ghosts, and their viewBox is taller
   // because it carries the little "bagel" caption under the ring.
