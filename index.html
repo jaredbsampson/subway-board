@@ -1880,6 +1880,7 @@ let spookyFlickerTimer = null;
 let fireworksTimer = null;
 let catCycleTimer = null;
 let catPeekTimers = [];
+let ghostTimer = null;
 let catWindowTimer = null;
 let catsActive = false;
 
@@ -1888,6 +1889,7 @@ function clearModeTimers() {
   modeTimers = [];
   if (spookyFlickerTimer) { clearInterval(spookyFlickerTimer); spookyFlickerTimer = null; }
   if (fireworksTimer) { clearTimeout(fireworksTimer); fireworksTimer = null; }
+  if (ghostTimer) { clearTimeout(ghostTimer); ghostTimer = null; }
   stopCatWindows();
 }
 
@@ -1988,13 +1990,16 @@ function spawnGhost() {
   setTimeout(() => ghost.remove(), duration * 1000 + 500);
 }
 function startGhosts() {
-  // 4 ghosts queued at 0/3/6/9s, then one every ~4s after
-  for (let i = 0; i < 4; i++) {
-    const t = setTimeout(spawnGhost, i * 3000);
-    modeTimers.push(t);
-  }
-  const interval = setInterval(spawnGhost, 4000);
-  modeTimers.push(interval);
+  // One ghost to open with, then a new one every ~16-26s. Against the 22-40s
+  // drift time that keeps one or two adrift at once; the old 4s cadence
+  // stacked up six to ten. Jittered rather than a fixed interval so the
+  // arrivals don't read as a metronome, and a single reused handle keeps a
+  // weeks-long spooky run from accumulating timers.
+  const tick = () => {
+    spawnGhost();
+    ghostTimer = setTimeout(tick, 16_000 + Math.random() * 10_000);
+  };
+  tick();
 }
 
 // --- Spooky: two black cats peeking up over the bottom edge ---
